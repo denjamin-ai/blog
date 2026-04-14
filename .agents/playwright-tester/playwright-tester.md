@@ -51,23 +51,33 @@ GO / NO-GO по результатам.
 - `.agents/skills/playwright-best-practices` — паттерны, локаторы, ожидания, Page Object
 - `.agents/skills/playwright-cli` — управление сессиями, снапшоты, отладка
 
-# Контекст проекта
+# Тестовый стенд
 
-- **URL:** `http://localhost:3000` (убедись, что dev-сервер запущен: `npm run dev`)
-- **БД:** `file:blog.db` — перед первым прогоном выполни `npm run seed`
+> **⚠️ ВАЖНО: тесты работают только на тестовом стенде. Никогда не используй порт 3000 или `blog.db`.**
+
+| Параметр | Тестовый стенд | Dev-окружение (не трогать!) |
+|----------|---------------|----------------------------|
+| URL | `http://localhost:3001` | `http://localhost:3000` |
+| БД | `blog.test.db` | `blog.db` |
+| Env | `.env.test` | `.env.local` |
+| Запуск | `npm run dev:test` | `npm run dev` |
+
+Стенд всегда сбрасывается до фиксированного seed-состояния перед прогоном.
+Это гарантирует воспроизводимость тестов.
+
 - **Тест-план:** `testing/TEST-PLAN.md`
 - **Тест-кейсы:** `testing/test-cases/TC-GUEST.md`, `TC-READER.md`, `TC-AUTHOR.md`, `TC-REVIEWER.md`, `TC-ADMIN.md`
 - **Smoke-набор:** `testing/smoke/SMOKE-SUITE.md` — 15 тестов, ~15 мин
 - **Регресс-набор:** `testing/regression/REGRESSION-SUITE.md`
 
-**Тестовые аккаунты (после сида):**
+**Тестовые аккаунты (после seed):**
 
 | Роль | Никнейм | Пароль |
 |------|---------|--------|
 | Читатель | `reader` | `password` |
 | Автор | `author` | `password` |
 | Ревьюер | `reviewer` | `password` |
-| Админ | — | значение из `ADMIN_PASSWORD_HASH` в `.env.local` |
+| Админ | — | значение из `ADMIN_PASSWORD_PLAIN` в `.env.test` (`dhome$32`) |
 
 **Критические инварианты (проверяй в каждом сценарии):**
 - Timestamps — Unix seconds (`Math.floor(Date.now() / 1000)`), не ms
@@ -81,28 +91,43 @@ GO / NO-GO по результатам.
 
 # Вспомогательные скрипты
 
-Все скрипты лежат в `.agents/playwright-tester/`. Запускай через Bash:
+Все скрипты лежат в `.agents/playwright-tester/`. Запускай через Bash.
+
+**Переменные окружения для скриптов тестового стенда:**
+- `BASE_URL=http://localhost:3001` — URL стенда
+- `DB_PATH=blog.test.db` — тестовая БД
+
+## reset-test-db.sh — сброс БД к начальному состоянию
+
+```bash
+# Полный сброс + seed (обязательно перед каждым прогоном!)
+bash .agents/playwright-tester/reset-test-db.sh
+
+# Только миграции, без seed
+bash .agents/playwright-tester/reset-test-db.sh --no-seed
+```
+
+⚠️ Затрагивает только `blog.test.db`. `blog.db` не трогается.
 
 ## healthcheck.sh — проверить и дождаться сервера
 
 ```bash
-bash .agents/playwright-tester/healthcheck.sh           # ждёт 60с
-bash .agents/playwright-tester/healthcheck.sh 120       # ждёт 120с
+bash .agents/playwright-tester/healthcheck.sh 60 http://localhost:3001
 ```
 
-Если вернул exit 1 — сообщи пользователю: `npm run dev`.
+Если вернул exit 1 — сообщи пользователю: `npm run dev:test`.
 
 ## login.sh — логин и сохранение cookies
 
 ```bash
-# Admin (пароль из .env.local ADMIN_PASSWORD_PLAIN или явно)
-bash .agents/playwright-tester/login.sh admin 'dhome$32'
+# Admin
+BASE_URL=http://localhost:3001 bash .agents/playwright-tester/login.sh admin 'dhome$32'
 # → cookie: /tmp/admin_cookies.txt
 
-# Пользователь
-bash .agents/playwright-tester/login.sh reader password
-bash .agents/playwright-tester/login.sh author password /tmp/my_author.txt
-# → cookie: /tmp/reader_cookies.txt, /tmp/my_author.txt
+# Пользователи
+BASE_URL=http://localhost:3001 bash .agents/playwright-tester/login.sh reader password
+BASE_URL=http://localhost:3001 bash .agents/playwright-tester/login.sh author password
+BASE_URL=http://localhost:3001 bash .agents/playwright-tester/login.sh reviewer password
 
 # Если вернул exit 2 — rate limit, подожди 15 минут
 ```
@@ -113,28 +138,25 @@ bash .agents/playwright-tester/login.sh author password /tmp/my_author.txt
 ## api-check.sh — быстрая проверка статуса API
 
 ```bash
-bash .agents/playwright-tester/api-check.sh GET /api/articles 200 /tmp/admin_cookies.txt
-bash .agents/playwright-tester/api-check.sh POST /api/articles 403 /tmp/admin_cookies.txt \
-  '{"title":"t","slug":"t","content":"","tags":[],"status":"draft"}'
-bash .agents/playwright-tester/api-check.sh DELETE /api/articles/ID 200 /tmp/admin_cookies.txt
-```
+BASE_URL=http://localhost:3001 bash .agents/playwright-tester/api-check.sh \
+  GET /api/articles 200 /tmp/admin_cookies.txt
 
-Выводит ✅ или ❌ + тело ответа при несовпадении статуса.
+BASE_URL=http://localhost:3001 bash .agents/playwright-tester/api-check.sh \
+  POST /api/articles 403 /tmp/admin_cookies.txt \
+  '{"title":"t","slug":"t","content":"","tags":[],"status":"draft"}'
+```
 
 ## db-query.sh — проверка состояния БД без SQL наизусть
 
 ```bash
-bash .agents/playwright-tester/db-query.sh articles
-bash .agents/playwright-tester/db-query.sh article <id>
-bash .agents/playwright-tester/db-query.sh versions <article_id>
-bash .agents/playwright-tester/db-query.sh users
-bash .agents/playwright-tester/db-query.sh user reviewer
-bash .agents/playwright-tester/db-query.sh assignments
-bash .agents/playwright-tester/db-query.sh assignments <article_id>
-bash .agents/playwright-tester/db-query.sh notifications admin
-bash .agents/playwright-tester/db-query.sh checklist <assignment_id>
-bash .agents/playwright-tester/db-query.sh comments <article_id>
-bash .agents/playwright-tester/db-query.sh sql "SELECT count(*) FROM articles;"
+DB_PATH=blog.test.db bash .agents/playwright-tester/db-query.sh articles
+DB_PATH=blog.test.db bash .agents/playwright-tester/db-query.sh users
+DB_PATH=blog.test.db bash .agents/playwright-tester/db-query.sh user reviewer
+DB_PATH=blog.test.db bash .agents/playwright-tester/db-query.sh assignments
+DB_PATH=blog.test.db bash .agents/playwright-tester/db-query.sh notifications admin
+DB_PATH=blog.test.db bash .agents/playwright-tester/db-query.sh checklist <assignment_id>
+DB_PATH=blog.test.db bash .agents/playwright-tester/db-query.sh comments <article_id>
+DB_PATH=blog.test.db bash .agents/playwright-tester/db-query.sh sql "SELECT count(*) FROM articles;"
 ```
 
 **Имена таблиц в SQLite:** `articles`, `article_versions`, `users`, `review_assignments`,
@@ -146,56 +168,45 @@ bash .agents/playwright-tester/db-query.sh sql "SELECT count(*) FROM articles;"
 
 ```bash
 # Залогинить всех сразу
-bash .agents/playwright-tester/session-manager.sh init \
+BASE_URL=http://localhost:3001 bash .agents/playwright-tester/session-manager.sh init \
   admin 'dhome$32' reader password author password reviewer password
 
 # Посмотреть статус сессий
 bash .agents/playwright-tester/session-manager.sh status
 
-# Выйти из конкретной роли
-bash .agents/playwright-tester/session-manager.sh logout reader
-
 # Выйти из всех
 bash .agents/playwright-tester/session-manager.sh logout-all
 ```
 
-## cleanup-test-data.sh — удаление тестовых данных
+## cleanup-test-data.sh — удаление тестовых данных (опционально)
 
 ```bash
 # Посмотреть что будет удалено (без удаления)
-bash .agents/playwright-tester/cleanup-test-data.sh --dry-run
+DB_PATH=blog.test.db bash .agents/playwright-tester/cleanup-test-data.sh --dry-run
 
 # Удалить (нужны admin cookies)
-bash .agents/playwright-tester/cleanup-test-data.sh /tmp/admin_cookies.txt
+DB_PATH=blog.test.db bash .agents/playwright-tester/cleanup-test-data.sh /tmp/admin_cookies.txt
 ```
 
-Удаляет статьи с `[TEST-RUN]` в заголовке, тестовых пользователей,
-фиксит orphaned `author_id`.
-
-## reset-db.sh — сброс БД до состояния seed
-
-```bash
-# Полный сброс + seed (только dev!)
-bash .agents/playwright-tester/reset-db.sh
-
-# Только миграции, без seed
-bash .agents/playwright-tester/reset-db.sh --no-seed
-```
+Альтернатива: просто перезапусти `reset-test-db.sh` — это быстрее и надёжнее.
 
 # Процесс
 
-## 0. Предусловия
+## 0. Предусловия — ВСЕГДА выполняй в этом порядке
 
 ```bash
-# 1. Проверить/дождаться сервер
-bash .agents/playwright-tester/healthcheck.sh
-# Выход 0 = готов, выход 1 = нужно запустить npm run dev
+# 1. Сбросить тестовую БД до фиксированного начального состояния
+bash .agents/playwright-tester/reset-test-db.sh
 
-# 2. Залогинить все нужные роли
-bash .agents/playwright-tester/login.sh admin 'dhome$32'
-bash .agents/playwright-tester/login.sh reader password
-bash .agents/playwright-tester/login.sh author password
-bash .agents/playwright-tester/login.sh reviewer password
+# 2. Проверить/дождаться тестовый сервер на порту 3001
+bash .agents/playwright-tester/healthcheck.sh 60 http://localhost:3001
+# Выход 1 → сообщи пользователю: npm run dev:test
+
+# 3. Залогинить все нужные роли
+BASE_URL=http://localhost:3001 bash .agents/playwright-tester/login.sh admin 'dhome$32'
+BASE_URL=http://localhost:3001 bash .agents/playwright-tester/login.sh reader password
+BASE_URL=http://localhost:3001 bash .agents/playwright-tester/login.sh author password
+BASE_URL=http://localhost:3001 bash .agents/playwright-tester/login.sh reviewer password
 ```
 
 ## 1. Прочитай нужный тест-набор
@@ -218,7 +229,7 @@ bash .agents/playwright-tester/login.sh reviewer password
 
 ```
 # Навигация
-mcp__playwright__browser_navigate { url: "http://localhost:3000/login" }
+mcp__playwright__browser_navigate { url: "http://localhost:3001/login" }
 mcp__playwright__browser_snapshot {}  # получи дерево элементов
 
 # Заполнение формы (используй ref из snapshot!)
@@ -246,26 +257,26 @@ mcp__playwright__browser_take_screenshot { type: "png" }
 **Осторожно:** `mcp__playwright__browser_fill_form` использует `ref` из snapshot — не selector.
 Для кнопок "Выйти" надёжнее `browser_evaluate` с `find(b => b.textContent.trim() === '...')`.
 
-### API через curl:
+### API через curl (всегда на порту 3001):
 
 ```bash
 # GET с авторизацией
 curl -s -b /tmp/admin_cookies.txt \
-  "http://localhost:3000/api/articles" \
-  -H "Origin: http://localhost:3000" | python3 -m json.tool
+  "http://localhost:3001/api/articles" \
+  -H "Origin: http://localhost:3001" | python3 -m json.tool
 
 # POST / PUT мутации (обязателен Origin!)
 curl -s -b /tmp/author_cookies.txt \
-  -X POST "http://localhost:3000/api/articles" \
+  -X POST "http://localhost:3001/api/articles" \
   -H "Content-Type: application/json" \
-  -H "Origin: http://localhost:3000" \
+  -H "Origin: http://localhost:3001" \
   -d '{"title":"...", "slug":"...", "content":"...", "tags":[], "status":"draft"}'
 
 # Проверить только HTTP-статус
 STATUS=$(curl -s -o /dev/null -w "%{http_code}" -b /tmp/reader_cookies.txt \
-  "http://localhost:3000/api/articles/ID/votes" \
+  "http://localhost:3001/api/articles/ID/votes" \
   -H "Content-Type: application/json" \
-  -H "Origin: http://localhost:3000" \
+  -H "Origin: http://localhost:3001" \
   -X POST -d '{"value":1}')
 echo "HTTP $STATUS"
 
@@ -273,15 +284,15 @@ echo "HTTP $STATUS"
 curl -H "X-Forwarded-For: 192.0.2.100" ...
 ```
 
-**Критично:** все мутирующие запросы требуют `Origin: http://localhost:3000`.
+**Критично:** все мутирующие запросы требуют `Origin: http://localhost:3001`.
 
 ## 3. Управление сессиями между ролями
 
 ```bash
 # Смена роли: выйти из текущей (для browser-сессии)
 curl -s -b /tmp/reader_cookies.txt \
-  -X DELETE "http://localhost:3000/api/auth/user" \
-  -H "Origin: http://localhost:3000"
+  -X DELETE "http://localhost:3001/api/auth/user" \
+  -H "Origin: http://localhost:3001"
 
 # Или через browser_evaluate
 mcp__playwright__browser_evaluate {
@@ -290,8 +301,8 @@ mcp__playwright__browser_evaluate {
 
 # Admin logout (другой эндпоинт!)
 curl -s -b /tmp/admin_cookies.txt \
-  -X DELETE "http://localhost:3000/api/auth" \
-  -H "Origin: http://localhost:3000"
+  -X DELETE "http://localhost:3001/api/auth" \
+  -H "Origin: http://localhost:3001"
 ```
 
 ## 4. Критические сценарии (всегда проверяй в smoke)
@@ -304,10 +315,16 @@ curl -s -b /tmp/admin_cookies.txt \
 | Rate limit voting | 2 быстрых POST vote → 429 на второй |
 | XSS в MDX | Создать статью с `<script>alert(1)</script>` → при открытии браузер блокируется на alert |
 
-## 5. После прогона — всегда чистить
+## 5. После прогона — чистка (опционально)
 
+Самый быстрый способ вернуть стенд в чистое состояние:
 ```bash
-bash .agents/playwright-tester/cleanup-test-data.sh /tmp/admin_cookies.txt
+bash .agents/playwright-tester/reset-test-db.sh
+```
+
+Или явная чистка через API:
+```bash
+DB_PATH=blog.test.db bash .agents/playwright-tester/cleanup-test-data.sh /tmp/admin_cookies.txt
 bash .agents/playwright-tester/session-manager.sh logout-all
 ```
 
@@ -318,8 +335,8 @@ bash .agents/playwright-tester/session-manager.sh logout-all
 ```
 🧪 Playwright E2E — [Smoke / Targeted / Регресс]
 Дата: YYYY-MM-DD HH:MM
-Сервер: http://localhost:3000
-БД: blog.db (seed выполнен: да/нет)
+Стенд: http://localhost:3001
+БД: blog.test.db (seed выполнен: да/нет)
 ```
 
 ## Результаты по тестам
@@ -347,7 +364,7 @@ P0: X/Y | P1: X/Y
 │      Screenshot: fail-smoke-008.png                  │
 │                                                      │
 │ [P1] SMOKE-004: Вход читателя не работает            │
-│      → Проверь bcrypt hash в .env.local              │
+│      → Проверь bcrypt hash в .env.test               │
 └─────────────────────────────────────────────────────┘
 
 Вердикт: ❌ NO-GO (есть P0 баги)
