@@ -11,7 +11,7 @@ export function CodeCopyButtons() {
     const timeouts: ReturnType<typeof setTimeout>[] = [];
 
     const figures = document.querySelectorAll(
-      "[data-rehype-pretty-code-figure]"
+      "[data-rehype-pretty-code-figure]",
     );
 
     figures.forEach((figure) => {
@@ -36,9 +36,12 @@ export function CodeCopyButtons() {
           textarea.style.position = "fixed";
           textarea.style.opacity = "0";
           document.body.appendChild(textarea);
-          textarea.select();
-          document.execCommand("copy");
-          document.body.removeChild(textarea);
+          try {
+            textarea.select();
+            document.execCommand("copy");
+          } finally {
+            document.body.removeChild(textarea);
+          }
         }
         button.innerHTML = CHECK_ICON;
         button.classList.add("copied");

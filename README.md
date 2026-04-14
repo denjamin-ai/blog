@@ -1,36 +1,97 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Блог с системой ревью
 
-## Getting Started
+Личный блог на Next.js 16 с поддержкой MDX, публичными комментариями и внутренней системой ревью статей.
 
-First, run the development server:
+## Стек
+
+- **Next.js 16** App Router, TypeScript, Tailwind CSS v4
+- **БД:** libsql / Drizzle ORM (dev: `file:blog.db`, prod: Turso)
+- **MDX:** `next-mdx-remote/rsc` + `rehype-pretty-code` (Shiki, темы `github-dark` / `github-light`)
+- **Auth:** `iron-session` + `bcryptjs`, cookie `blog_session` (7 дней)
+- **Деплой:** Vercel + Turso
+
+## Запуск
 
 ```bash
+npm install
+cp .env.local.example .env.local  # заполнить SESSION_SECRET и ADMIN_PASSWORD_HASH
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+```bash
+npm run build     # production-сборка (основная валидация)
+npm run lint      # ESLint
+npm run seed      # заполнить БД тестовыми данными
+npx drizzle-kit generate  # сгенерировать миграцию после изменений схемы
+npx drizzle-kit migrate   # применить миграции
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Переменные окружения
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Переменная | Обязательна | Описание |
+|---|---|---|
+| `SESSION_SECRET` | Да | Строка 32+ символа, шифрует cookie |
+| `ADMIN_PASSWORD_HASH` | Да | bcrypt-хеш пароля; `$` экранировать как `\$` |
+| `TURSO_CONNECTION_URL` | Prod | URL базы Turso |
+| `TURSO_AUTH_TOKEN` | Prod | Токен Turso |
 
-## Learn More
+## Роли пользователей
 
-To learn more about Next.js, take a look at the following resources:
+| Роль | Как создаётся | Описание |
+|---|---|---|
+| **Гость** | — | Не авторизован |
+| **Читатель** | Admin создаёт в `/admin/users` | Может оставлять публичные комментарии |
+| **Ревьер** | Admin создаёт в `/admin/users` | Получает назначения на ревью статей |
+| **Admin** | Env-переменные, нет записи в БД | Полный доступ |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Навигация и права доступа
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Страница | Гость | Читатель | Ревьер | Admin |
+|---|:---:|:---:|:---:|:---:|
+| `/` | + | + | + | + |
+| `/blog` | + | + | + | + |
+| `/blog/[slug]` — чтение статьи | + | + | + | + |
+| `/blog/[slug]` — публичные комментарии (чтение) | + | + | + | + |
+| `/blog/[slug]` — оставить комментарий | − | + | − | − |
+| `/login` — вход читателя / ревьера | + | − | − | − |
+| `/admin/login` | + | − | − | + |
+| **Admin** |||||
+| `/admin` — дашборд | − | − | − | + |
+| `/admin/articles` | − | − | − | + |
+| `/admin/articles/new` | − | − | − | + |
+| `/admin/articles/[id]` — редактирование | − | − | − | + |
+| `/admin/articles/[id]/history` — история версий | − | − | − | + |
+| `/admin/articles/[id]/review` — назначения ревью | − | − | − | + |
+| `/admin/users` | − | − | − | + |
+| `/admin/users/new` | − | − | − | + |
+| `/admin/users/[id]` | − | − | − | + |
+| `/admin/notifications` | − | − | − | + |
+| **Ревьер** |||||
+| `/reviewer` — дашборд | − | − | + | − |
+| `/reviewer/assignments` | − | − | + | − |
+| `/reviewer/assignments/[id]` — детали назначения | − | − | + (своё) | − |
+| `/reviewer/assignments/[id]/versions` — версии | − | − | + (своё) | − |
+| `/reviewer/notifications` | − | − | + | − |
 
-## Deploy on Vercel
+> **«+ (своё)»** — ревьер видит только те назначения, в которых он является назначенным ревьером.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Основные флоу
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Публикация с ревью
+
+1. Admin открывает статью → выбирает ревьера → сохраняет с режимом **«Отправить на ревью»**
+2. Создаётся `reviewAssignment` (статус `pending`), ревьер получает уведомление
+3. Ревьер открывает `/reviewer/assignments/[id]`, читает зафиксированную версию статьи
+4. Ревьер пишет комментарии (приватные), меняет статус: `accepted` → `completed`
+5. Admin получает уведомление, отвечает на комментарии, публикует статью
+
+### Публичные комментарии
+
+- Читатель входит через `/login`, оставляет комментарии на `/blog/[slug]`
+- Максимум 2 уровня вложенности; окно редактирования — 15 минут
+- При удалении комментарий заменяется плейсхолдером `[удалено]` (мягкое удаление)
+- Если статья переиздана после того, как был оставлен комментарий, отображается предупреждение о версии
+
+### Changelog статьи
+
+Admin при публикации добавляет записи в журнал изменений — они отображаются аккордеоном на странице статьи (публично).

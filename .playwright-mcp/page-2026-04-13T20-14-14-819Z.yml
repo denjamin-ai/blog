@@ -1,0 +1,25 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "devblog" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e5]:
+        - link "Главная" [ref=e6] [cursor=pointer]:
+          - /url: /
+        - link "Блог" [ref=e7] [cursor=pointer]:
+          - /url: /blog
+        - button "Toggle theme" [ref=e8]:
+          - img [ref=e9]
+  - main [ref=e15]:
+    - generic [ref=e16]:
+      - heading "Уведомления" [level=1] [ref=e18]
+      - paragraph [ref=e19]: Нет уведомлений. Подпишитесь на авторов, чтобы получать уведомления о новых статьях.
+  - contentinfo [ref=e20]:
+    - generic [ref=e21]:
+      - paragraph [ref=e22]: © 2026 devblog
+      - link "RSS-фид" [ref=e23] [cursor=pointer]:
+        - /url: /feed.xml
+        - img [ref=e24]
+  - button "Open Next.js Dev Tools" [ref=e32] [cursor=pointer]:
+    - img [ref=e33]
+  - alert [ref=e36]

@@ -1,0 +1,42 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "devblog" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e5]:
+        - link "Главная" [ref=e6] [cursor=pointer]:
+          - /url: /
+        - link "Блог" [ref=e7] [cursor=pointer]:
+          - /url: /blog
+        - button "Toggle theme" [ref=e8]:
+          - img [ref=e9]
+  - main [ref=e15]:
+    - generic [ref=e16]:
+      - navigation [ref=e17]:
+        - generic [ref=e18]:
+          - generic [ref=e19]:
+            - link "Админка" [ref=e20] [cursor=pointer]:
+              - /url: /admin
+            - generic [ref=e21]:
+              - link "Статьи" [ref=e22] [cursor=pointer]:
+                - /url: /admin/articles
+              - link "Пользователи" [ref=e23] [cursor=pointer]:
+                - /url: /admin/users
+              - link "Уведомления" [ref=e24] [cursor=pointer]:
+                - /url: /admin/notifications
+              - link "Настройки" [ref=e25] [cursor=pointer]:
+                - /url: /admin/settings
+              - link "Сайт →" [ref=e26] [cursor=pointer]:
+                - /url: /
+          - button "Выйти" [ref=e28]
+      - main [ref=e29]:
+        - generic [ref=e30]: Загрузка...
+  - contentinfo [ref=e31]:
+    - generic [ref=e32]:
+      - paragraph [ref=e33]: © 2026 devblog
+      - link "RSS-фид" [ref=e34] [cursor=pointer]:
+        - /url: /feed.xml
+        - img [ref=e35]
+  - button "Open Next.js Dev Tools" [ref=e43] [cursor=pointer]:
+    - img [ref=e44]
+  - alert [ref=e47]

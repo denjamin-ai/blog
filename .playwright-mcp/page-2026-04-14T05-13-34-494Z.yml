@@ -1,0 +1,124 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "devblog" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e5]:
+        - link "Главная" [ref=e6] [cursor=pointer]:
+          - /url: /
+        - link "Блог" [ref=e7] [cursor=pointer]:
+          - /url: /blog
+        - button "Toggle theme" [ref=e8]:
+          - img [ref=e9]
+  - main [ref=e15]:
+    - generic [ref=e16]:
+      - link "← Назад к блогу" [ref=e17] [cursor=pointer]:
+        - /url: /blog
+      - generic [ref=e18]:
+        - article [ref=e19]:
+          - generic [ref=e20]:
+            - 'heading "Drizzle ORM: быстрый старт с SQLite" [level=1] [ref=e21]'
+            - generic [ref=e22]:
+              - generic [ref=e23]: 13 апреля 2026 г.
+              - generic [ref=e24]: 2 мин чтения
+              - generic [ref=e25]: 3 просмотров
+              - generic [ref=e26]:
+                - generic [ref=e27]: drizzle
+                - generic [ref=e28]: sqlite
+                - generic [ref=e29]: orm
+            - generic [ref=e30]:
+              - generic [ref=e31]:
+                - button "Нравится" [ref=e32]:
+                  - img [ref=e33]
+                - generic [ref=e35]: "0"
+                - button "Не нравится" [ref=e36]:
+                  - img [ref=e37]
+              - button "1" [ref=e39]:
+                - img [ref=e40]
+                - generic [ref=e42]: "1"
+              - generic [ref=e43]:
+                - generic [ref=e44]: "Поделиться:"
+                - button "Поделиться в Telegram" [ref=e45] [cursor=pointer]: Telegram
+                - button "Поделиться ВКонтакте" [ref=e46] [cursor=pointer]: ВКонтакте
+                - button "Поделиться в X" [ref=e47] [cursor=pointer]: X
+                - button "Копировать ссылку" [ref=e48] [cursor=pointer]
+          - generic [ref=e49]:
+            - paragraph [ref=e50]: Drizzle ORM — лёгкий и типобезопасный ORM для TypeScript. Рассмотрим базовую настройку с SQLite.
+            - heading "Установка" [level=2] [ref=e51]
+            - figure [ref=e52]:
+              - generic [ref=e53]:
+                - code [ref=e54]:
+                  - generic [ref=e55]: npm install drizzle-orm better-sqlite3
+                  - generic [ref=e56]: npm install -D drizzle-kit @types/better-sqlite3
+                - button "Копировать код" [ref=e57] [cursor=pointer]:
+                  - img [ref=e58]
+            - heading "Определение схемы" [level=2] [ref=e61]
+            - paragraph [ref=e62]: "Схема описывается в TypeScript:"
+            - figure [ref=e63]:
+              - generic [ref=e64]:
+                - code [ref=e65]:
+                  - generic [ref=e66]: "import { sqliteTable, text, integer } from \"drizzle-orm/sqlite-core\";"
+                  - generic [ref=e68]: "export const posts = sqliteTable(\"posts\", {"
+                  - generic [ref=e69]: "id: text(\"id\").primaryKey(),"
+                  - generic [ref=e70]: "title: text(\"title\").notNull(),"
+                  - generic [ref=e71]: "content: text(\"content\").notNull(),"
+                  - generic [ref=e72]: "createdAt: integer(\"created_at\").notNull(),"
+                  - generic [ref=e73]: "});"
+                - button "Копировать код" [ref=e74] [cursor=pointer]:
+                  - img [ref=e75]
+            - heading "Запросы" [level=2] [ref=e78]
+            - paragraph [ref=e79]: "Drizzle предоставляет типобезопасный query builder:"
+            - figure [ref=e80]:
+              - generic [ref=e81]:
+                - code [ref=e82]:
+                  - generic [ref=e83]: "import { db } from \"./db\";"
+                  - generic [ref=e84]: "import { posts } from \"./schema\";"
+                  - generic [ref=e85]: "import { eq, desc } from \"drizzle-orm\";"
+                  - generic [ref=e87]: // Все посты
+                  - generic [ref=e88]: const allPosts = await db.select().from(posts).all();
+                  - generic [ref=e90]: // Фильтрация
+                  - generic [ref=e91]: const post = await db
+                  - generic [ref=e92]: .select()
+                  - generic [ref=e93]: .from(posts)
+                  - generic [ref=e94]: .where(eq(posts.id, "abc123"))
+                  - generic [ref=e95]: .get();
+                  - generic [ref=e97]: // Сортировка
+                  - generic [ref=e98]: const recent = await db
+                  - generic [ref=e99]: .select()
+                  - generic [ref=e100]: .from(posts)
+                  - generic [ref=e101]: .orderBy(desc(posts.createdAt))
+                  - generic [ref=e102]: .limit(5)
+                  - generic [ref=e103]: .all();
+                - button "Копировать код" [ref=e104] [cursor=pointer]:
+                  - img [ref=e105]
+            - paragraph [ref=e108]: Drizzle отлично подходит для проектов, где важна типобезопасность без overhead тяжёлых ORM.
+            - blockquote [ref=e109]:
+              - paragraph [ref=e110]: "Обновлено: добавлен новый раздел."
+        - complementary [ref=e111]:
+          - navigation "Оглавление" [ref=e112]:
+            - paragraph [ref=e113]: Оглавление
+            - list [ref=e114]:
+              - listitem [ref=e115]:
+                - button "Установка" [ref=e116]
+              - listitem [ref=e117]:
+                - button "Определение схемы" [ref=e118]
+              - listitem [ref=e119]:
+                - button "Запросы" [ref=e120]
+      - generic [ref=e121]:
+        - paragraph [ref=e122]: "Последнее обновление: 13 апреля 2026 г. — Установка: Обновлены версии пакетов в примере установки."
+        - group [ref=e123]:
+          - generic "Журнал изменений 1" [ref=e124] [cursor=pointer]:
+            - generic [ref=e125]: Журнал изменений
+            - generic [ref=e126]: "1"
+      - generic [ref=e128]:
+        - heading "Комментарии" [level=2] [ref=e129]
+        - paragraph [ref=e130]: Загрузка…
+  - contentinfo [ref=e131]:
+    - generic [ref=e132]:
+      - paragraph [ref=e133]: © 2026 devblog
+      - link "RSS-фид" [ref=e134] [cursor=pointer]:
+        - /url: /feed.xml
+        - img [ref=e135]
+  - button "Open Next.js Dev Tools" [ref=e143] [cursor=pointer]:
+    - img [ref=e144]
+  - alert [ref=e147]

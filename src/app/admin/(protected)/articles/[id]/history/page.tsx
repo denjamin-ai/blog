@@ -71,6 +71,9 @@ export default async function HistoryPage({
               </summary>
               <div className="px-4 py-3 border-t border-border">
                 <h3 className="font-medium mb-2">{version.title}</h3>
+                <p className="text-xs text-muted-foreground mb-1">
+                  Исходный код MDX
+                </p>
                 <pre className="bg-muted p-3 rounded-lg overflow-x-auto text-sm font-mono whitespace-pre-wrap">
                   {version.content}
                 </pre>

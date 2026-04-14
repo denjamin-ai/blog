@@ -5,8 +5,15 @@ import { Footer } from "@/components/footer";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "devblog",
-  description: "Персональный блог разработчика",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000",
+  ),
+  title: {
+    default: "devblog",
+    template: "%s | devblog",
+  },
+  description:
+    "Персональный блог разработчика — статьи о программировании, веб-разработке и технологиях.",
 };
 
 export default function RootLayout({

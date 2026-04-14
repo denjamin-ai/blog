@@ -1,0 +1,62 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "devblog" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e5]:
+        - link "Главная" [ref=e6] [cursor=pointer]:
+          - /url: /
+        - link "Блог" [ref=e7] [cursor=pointer]:
+          - /url: /blog
+        - button "Toggle theme" [ref=e8]:
+          - img [ref=e9]
+  - main [ref=e15]:
+    - generic [ref=e16]:
+      - navigation [ref=e17]:
+        - generic [ref=e18]:
+          - generic [ref=e19]:
+            - link "Ревью" [ref=e20] [cursor=pointer]:
+              - /url: /reviewer
+            - generic [ref=e21]:
+              - link "Назначения" [ref=e22] [cursor=pointer]:
+                - /url: /reviewer/assignments
+              - link "Уведомления 5" [ref=e23] [cursor=pointer]:
+                - /url: /reviewer/notifications
+                - text: Уведомления
+                - generic [ref=e24]: "5"
+          - button "Выйти" [ref=e26]
+      - main [ref=e27]:
+        - link "История версий" [ref=e29] [cursor=pointer]:
+          - /url: /reviewer/assignments/01KP5F70P0QFG89BWN0B6N0MP7/versions
+        - generic [ref=e30]:
+          - generic [ref=e31]:
+            - generic [ref=e32]:
+              - button "Статья" [ref=e33]
+              - button "Изменения" [ref=e34]
+            - generic [ref=e35]:
+              - heading "[TEST-RUN] Review Workflow" [level=1] [ref=e36]
+              - article [ref=e37]:
+                - heading "Review Workflow" [level=1] [ref=e38]
+                - paragraph [ref=e39]: This is the main review test article.
+                - figure [ref=e40]:
+                  - code [ref=e42]:
+                    - generic [ref=e43]: console.log("hello");
+          - complementary [ref=e44]:
+            - generic [ref=e45]:
+              - generic [ref=e46]: Принято
+              - generic [ref=e47]:
+                - button "Завершить" [ref=e48]
+                - button "Отклонить" [ref=e49]
+            - paragraph [ref=e51]: Нет комментариев
+            - generic [ref=e52]:
+              - textbox "Добавить комментарий…" [ref=e53]
+              - button "Отправить" [disabled] [ref=e54]
+  - contentinfo [ref=e55]:
+    - generic [ref=e56]:
+      - paragraph [ref=e57]: © 2026 devblog
+      - link "RSS-фид" [ref=e58] [cursor=pointer]:
+        - /url: /feed.xml
+        - img [ref=e59]
+  - button "Open Next.js Dev Tools" [ref=e67] [cursor=pointer]:
+    - img [ref=e68]
+  - alert [ref=e71]

@@ -1,0 +1,101 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "devblog" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e5]:
+        - link "Главная" [ref=e6] [cursor=pointer]:
+          - /url: /
+        - link "Блог" [ref=e7] [cursor=pointer]:
+          - /url: /blog
+        - button "Toggle theme" [ref=e8]:
+          - img [ref=e9]
+  - main [ref=e11]:
+    - generic [ref=e12]:
+      - link "← Назад к блогу" [ref=e13] [cursor=pointer]:
+        - /url: /blog
+      - group [ref=e15]:
+        - generic "Оглавление" [ref=e16] [cursor=pointer]
+      - article [ref=e18]:
+        - generic [ref=e19]:
+          - 'heading "Next.js App Router: практическое руководство" [level=1] [ref=e20]'
+          - generic [ref=e21]:
+            - generic [ref=e22]: 13 апреля 2026 г.
+            - generic [ref=e23]: 2 мин чтения
+            - generic [ref=e24]: 0 просмотров
+            - generic [ref=e25]:
+              - generic [ref=e26]: next.js
+              - generic [ref=e27]: react
+              - generic [ref=e28]: app-router
+          - generic [ref=e29]:
+            - generic [ref=e30]:
+              - text: "Автор:"
+              - link "Test Author" [ref=e31] [cursor=pointer]:
+                - /url: /authors/testauthor
+            - button "Подписаться" [ref=e32]
+          - generic [ref=e33]:
+            - generic [ref=e34]:
+              - button "Нравится" [ref=e35]:
+                - img [ref=e36]
+              - generic [ref=e38]: "0"
+              - button "Не нравится" [ref=e39]:
+                - img [ref=e40]
+            - button "В закладки" [ref=e42]:
+              - img [ref=e43]
+            - generic [ref=e45]:
+              - generic [ref=e46]: "Поделиться:"
+              - button "Поделиться в Telegram" [ref=e47] [cursor=pointer]: Telegram
+              - button "Поделиться ВКонтакте" [ref=e48] [cursor=pointer]: ВКонтакте
+              - button "Поделиться в X" [ref=e49] [cursor=pointer]: X
+              - button "Копировать ссылку" [ref=e50] [cursor=pointer]
+        - generic [ref=e51]:
+          - paragraph [ref=e52]: Next.js 13+ представил App Router — новый способ организации маршрутизации на основе файловой системы.
+          - heading "Структура проекта" [level=2] [ref=e53]
+          - code [ref=e55]: app/ layout.tsx — корневой layout page.tsx — главная страница / blog/ page.tsx — /blog [slug]/ page.tsx — /blog/:slug
+          - heading "Server Components по умолчанию" [level=2] [ref=e56]
+          - paragraph [ref=e57]:
+            - text: Все компоненты в
+            - code [ref=e58]: app/
+            - text: "— серверные по умолчанию. Они рендерятся на сервере и не попадают в бандл клиента:"
+          - figure [ref=e59]:
+            - generic [ref=e60]:
+              - code [ref=e61]:
+                - generic [ref=e62]: // app/blog/page.tsx — Server Component
+                - generic [ref=e63]: "import { db } from \"@/lib/db\";"
+                - generic [ref=e65]: "export default async function BlogPage() {"
+                - generic [ref=e66]: const posts = await db.select().from(articles);
+                - generic [ref=e67]: "return <ul>{posts.map(p => <li key={p.id}>{p.title}</li>)}</ul>;"
+                - generic [ref=e68]: "}"
+              - button "Копировать код" [ref=e69] [cursor=pointer]:
+                - img [ref=e70]
+          - heading "Client Components" [level=2] [ref=e73]
+          - paragraph [ref=e74]:
+            - text: Для интерактивности — директива
+            - code [ref=e75]: "\"use client\""
+            - text: ":"
+          - figure [ref=e76]:
+            - generic [ref=e77]:
+              - code [ref=e78]:
+                - generic [ref=e79]: "\"use client\";"
+                - generic [ref=e81]: "import { useState } from \"react\";"
+                - generic [ref=e83]: "export function Counter() {"
+                - generic [ref=e84]: const [count, setCount] = useState(0);
+                - generic [ref=e85]: "return <button onClick={() => setCount(c => c + 1)}>{count}</button>;"
+                - generic [ref=e86]: "}"
+              - button "Копировать код" [ref=e87] [cursor=pointer]:
+                - img [ref=e88]
+          - heading "Layouts и вложенность" [level=2] [ref=e91]
+          - paragraph [ref=e92]: Layouts оборачивают все дочерние страницы и сохраняют состояние при навигации.
+          - paragraph [ref=e93]: App Router — мощный инструмент для построения современных React-приложений с отличной производительностью.
+      - generic [ref=e95]:
+        - heading "Комментарии" [level=2] [ref=e96]
+        - paragraph [ref=e97]: Загрузка…
+  - contentinfo [ref=e98]:
+    - generic [ref=e99]:
+      - paragraph [ref=e100]: © 2026 devblog
+      - link "RSS-фид" [ref=e101] [cursor=pointer]:
+        - /url: /feed.xml
+        - img [ref=e102]
+  - button "Open Next.js Dev Tools" [ref=e110] [cursor=pointer]:
+    - img [ref=e111]
+  - alert [ref=e114]

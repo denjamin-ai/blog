@@ -1,4 +1,5 @@
 import { requireAdmin } from "@/lib/auth";
+import { NotificationBadge } from "@/components/notification-badge";
 import Link from "next/link";
 
 export default async function AdminLayout({
@@ -22,6 +23,25 @@ export default async function AdminLayout({
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 Статьи
+              </Link>
+              <Link
+                href="/admin/users"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Пользователи
+              </Link>
+              <Link
+                href="/admin/notifications"
+                className="text-muted-foreground hover:text-foreground transition-colors flex items-center"
+              >
+                Уведомления
+                <NotificationBadge />
+              </Link>
+              <Link
+                href="/admin/settings"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Настройки
               </Link>
               <Link
                 href="/"

@@ -1,0 +1,43 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "devblog" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e5]:
+        - link "Главная" [ref=e6] [cursor=pointer]:
+          - /url: /
+        - link "Блог" [ref=e7] [cursor=pointer]:
+          - /url: /blog
+        - button "Toggle theme" [ref=e8]:
+          - img [ref=e9]
+  - main [ref=e15]:
+    - main [ref=e16]:
+      - generic [ref=e17]:
+        - generic [ref=e18]: T
+        - generic [ref=e19]:
+          - heading "Test Author" [level=1] [ref=e20]
+          - paragraph [ref=e21]: Тестовый автор блога. Пишу о TypeScript, Next.js и веб-разработке.
+      - generic [ref=e22]:
+        - heading "Статьи(1)" [level=2] [ref=e23]:
+          - text: Статьи
+          - generic [ref=e24]: (1)
+        - article [ref=e26]:
+          - 'link "Next.js App Router: практическое руководство" [ref=e27] [cursor=pointer]':
+            - /url: /blog/intro-nextjs-app-router
+            - 'heading "Next.js App Router: практическое руководство" [level=3] [ref=e28]'
+          - paragraph [ref=e29]: "Разбираем App Router в Next.js: Server Components, Client Components, layouts и вложенная маршрутизация."
+          - generic [ref=e30]:
+            - generic [ref=e31]: 13 апреля 2026 г.
+            - generic [ref=e32]:
+              - generic [ref=e33]: next.js
+              - generic [ref=e34]: react
+              - generic [ref=e35]: app-router
+  - contentinfo [ref=e36]:
+    - generic [ref=e37]:
+      - paragraph [ref=e38]: © 2026 devblog
+      - link "RSS-фид" [ref=e39] [cursor=pointer]:
+        - /url: /feed.xml
+        - img [ref=e40]
+  - button "Open Next.js Dev Tools" [ref=e48] [cursor=pointer]:
+    - img [ref=e49]
+  - alert [ref=e52]

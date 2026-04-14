@@ -1,0 +1,284 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "devblog" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e5]:
+        - link "Главная" [ref=e6] [cursor=pointer]:
+          - /url: /
+        - link "Блог" [ref=e7] [cursor=pointer]:
+          - /url: /blog
+        - button "Toggle theme" [ref=e8]:
+          - img [ref=e9]
+  - main [ref=e15]:
+    - generic [ref=e16]:
+      - navigation [ref=e17]:
+        - generic [ref=e18]:
+          - generic [ref=e19]:
+            - link "Админка" [ref=e20] [cursor=pointer]:
+              - /url: /admin
+            - generic [ref=e21]:
+              - link "Статьи" [ref=e22] [cursor=pointer]:
+                - /url: /admin/articles
+              - link "Пользователи" [ref=e23] [cursor=pointer]:
+                - /url: /admin/users
+              - link "Уведомления" [ref=e24] [cursor=pointer]:
+                - /url: /admin/notifications
+              - link "Настройки" [ref=e25] [cursor=pointer]:
+                - /url: /admin/settings
+              - link "Сайт →" [ref=e26] [cursor=pointer]:
+                - /url: /
+          - button "Выйти" [ref=e28]
+      - main [ref=e29]:
+        - generic [ref=e30]:
+          - heading "Статьи" [level=1] [ref=e32]
+          - generic [ref=e34]:
+            - button "Все" [ref=e35]
+            - button "Черновики" [ref=e36]
+            - button "Запланированные" [ref=e37]
+            - button "Опубликованные" [ref=e38]
+          - table [ref=e40]:
+            - rowgroup [ref=e41]:
+              - row "Заголовок Автор Статус Ревью Обновлено Действия" [ref=e42]:
+                - columnheader "Заголовок" [ref=e43]
+                - columnheader "Автор" [ref=e44]
+                - columnheader "Статус" [ref=e45]
+                - columnheader "Ревью" [ref=e46]
+                - columnheader "Обновлено" [ref=e47]
+                - columnheader "Действия" [ref=e48]
+            - rowgroup [ref=e49]:
+              - 'row "Drizzle ORM: быстрый старт с SQLite Администратор Опубликовано — 14.04.2026 Редактировать История Скрыть" [ref=e50]':
+                - 'cell "Drizzle ORM: быстрый старт с SQLite" [ref=e51]':
+                  - 'link "Drizzle ORM: быстрый старт с SQLite" [ref=e52] [cursor=pointer]':
+                    - /url: /admin/articles/01KP41BCKMC98GJZX9RPKP2X64
+                - cell "Администратор" [ref=e53]
+                - cell "Опубликовано" [ref=e54]:
+                  - generic [ref=e56]: Опубликовано
+                - cell "—" [ref=e57]
+                - cell "14.04.2026" [ref=e58]
+                - cell "Редактировать История Скрыть" [ref=e59]:
+                  - generic [ref=e60]:
+                    - link "Редактировать" [ref=e61] [cursor=pointer]:
+                      - /url: /admin/articles/01KP41BCKMC98GJZX9RPKP2X64
+                    - link "История" [ref=e62] [cursor=pointer]:
+                      - /url: /admin/articles/01KP41BCKMC98GJZX9RPKP2X64/history
+                    - button "Скрыть" [ref=e63]
+              - row "[TEST-RUN] Checklist Test2 Тестовый автор 2 Опубликовано — 14.04.2026 Редактировать История Скрыть" [ref=e64]:
+                - cell "[TEST-RUN] Checklist Test2" [ref=e65]:
+                  - link "[TEST-RUN] Checklist Test2" [ref=e66] [cursor=pointer]:
+                    - /url: /admin/articles/01KP5H4FJ86EG32WXQZ5K4G1G0
+                - cell "Тестовый автор 2" [ref=e67]
+                - cell "Опубликовано" [ref=e68]:
+                  - generic [ref=e70]: Опубликовано
+                - cell "—" [ref=e71]
+                - cell "14.04.2026" [ref=e72]
+                - cell "Редактировать История Скрыть" [ref=e73]:
+                  - generic [ref=e74]:
+                    - link "Редактировать" [ref=e75] [cursor=pointer]:
+                      - /url: /admin/articles/01KP5H4FJ86EG32WXQZ5K4G1G0
+                    - link "История" [ref=e76] [cursor=pointer]:
+                      - /url: /admin/articles/01KP5H4FJ86EG32WXQZ5K4G1G0/history
+                    - button "Скрыть" [ref=e77]
+              - row "[TEST-RUN] Checklist Test Тестовый автор 2 Черновик — 14.04.2026 Редактировать История" [ref=e78]:
+                - cell "[TEST-RUN] Checklist Test" [ref=e79]:
+                  - link "[TEST-RUN] Checklist Test" [ref=e80] [cursor=pointer]:
+                    - /url: /admin/articles/01KP5GX810WN04CM0W29H55NVA
+                - cell "Тестовый автор 2" [ref=e81]
+                - cell "Черновик" [ref=e82]:
+                  - generic [ref=e84]: Черновик
+                - cell "—" [ref=e85]
+                - cell "14.04.2026" [ref=e86]
+                - cell "Редактировать История" [ref=e87]:
+                  - generic [ref=e88]:
+                    - link "Редактировать" [ref=e89] [cursor=pointer]:
+                      - /url: /admin/articles/01KP5GX810WN04CM0W29H55NVA
+                    - link "История" [ref=e90] [cursor=pointer]:
+                      - /url: /admin/articles/01KP5GX810WN04CM0W29H55NVA/history
+              - row "[TEST-RUN] No Verdict Тестовый автор 2 Черновик — 14.04.2026 Редактировать История" [ref=e91]:
+                - cell "[TEST-RUN] No Verdict" [ref=e92]:
+                  - link "[TEST-RUN] No Verdict" [ref=e93] [cursor=pointer]:
+                    - /url: /admin/articles/01KP5GPYQ6E63CSV09XG5HNDS8
+                - cell "Тестовый автор 2" [ref=e94]
+                - cell "Черновик" [ref=e95]:
+                  - generic [ref=e97]: Черновик
+                - cell "—" [ref=e98]
+                - cell "14.04.2026" [ref=e99]
+                - cell "Редактировать История" [ref=e100]:
+                  - generic [ref=e101]:
+                    - link "Редактировать" [ref=e102] [cursor=pointer]:
+                      - /url: /admin/articles/01KP5GPYQ6E63CSV09XG5HNDS8
+                    - link "История" [ref=e103] [cursor=pointer]:
+                      - /url: /admin/articles/01KP5GPYQ6E63CSV09XG5HNDS8/history
+              - row "[TEST-RUN] Review Workflow Тестовый автор 2 Черновик ✅ Одобрено 14.04.2026 Редактировать История" [ref=e104]:
+                - cell "[TEST-RUN] Review Workflow" [ref=e105]:
+                  - link "[TEST-RUN] Review Workflow" [ref=e106] [cursor=pointer]:
+                    - /url: /admin/articles/01KP5F70EYXQDAM6PVF4CHTWCT
+                - cell "Тестовый автор 2" [ref=e107]
+                - cell "Черновик" [ref=e108]:
+                  - generic [ref=e110]: Черновик
+                - cell "✅ Одобрено" [ref=e111]:
+                  - link "✅ Одобрено" [ref=e112] [cursor=pointer]:
+                    - /url: /admin/articles/01KP5F70EYXQDAM6PVF4CHTWCT/review
+                    - generic [ref=e113]:
+                      - generic [ref=e114]: ✅
+                      - text: Одобрено
+                - cell "14.04.2026" [ref=e115]
+                - cell "Редактировать История" [ref=e116]:
+                  - generic [ref=e117]:
+                    - link "Редактировать" [ref=e118] [cursor=pointer]:
+                      - /url: /admin/articles/01KP5F70EYXQDAM6PVF4CHTWCT
+                    - link "История" [ref=e119] [cursor=pointer]:
+                      - /url: /admin/articles/01KP5F70EYXQDAM6PVF4CHTWCT/history
+              - row "[TEST-RUN] Decline Test Тестовый автор 2 Черновик — 14.04.2026 Редактировать История" [ref=e120]:
+                - cell "[TEST-RUN] Decline Test" [ref=e121]:
+                  - link "[TEST-RUN] Decline Test" [ref=e122] [cursor=pointer]:
+                    - /url: /admin/articles/01KP5D0QXN8PGMB8BCP1PPW0KR
+                - cell "Тестовый автор 2" [ref=e123]
+                - cell "Черновик" [ref=e124]:
+                  - generic [ref=e126]: Черновик
+                - cell "—" [ref=e127]
+                - cell "14.04.2026" [ref=e128]
+                - cell "Редактировать История" [ref=e129]:
+                  - generic [ref=e130]:
+                    - link "Редактировать" [ref=e131] [cursor=pointer]:
+                      - /url: /admin/articles/01KP5D0QXN8PGMB8BCP1PPW0KR
+                    - link "История" [ref=e132] [cursor=pointer]:
+                      - /url: /admin/articles/01KP5D0QXN8PGMB8BCP1PPW0KR/history
+              - row "[TEST-RUN] Review Article Тестовый автор 2 Черновик — 14.04.2026 Редактировать История" [ref=e133]:
+                - cell "[TEST-RUN] Review Article" [ref=e134]:
+                  - link "[TEST-RUN] Review Article" [ref=e135] [cursor=pointer]:
+                    - /url: /admin/articles/01KP5CBHVD2ABBCYPQ5572Y18A
+                - cell "Тестовый автор 2" [ref=e136]
+                - cell "Черновик" [ref=e137]:
+                  - generic [ref=e139]: Черновик
+                - cell "—" [ref=e140]
+                - cell "14.04.2026" [ref=e141]
+                - cell "Редактировать История" [ref=e142]:
+                  - generic [ref=e143]:
+                    - link "Редактировать" [ref=e144] [cursor=pointer]:
+                      - /url: /admin/articles/01KP5CBHVD2ABBCYPQ5572Y18A
+                    - link "История" [ref=e145] [cursor=pointer]:
+                      - /url: /admin/articles/01KP5CBHVD2ABBCYPQ5572Y18A/history
+              - row "[TEST-RUN] Article autora2 Тестовый автор 2 Черновик ✅ Одобрено 14.04.2026 Редактировать История" [ref=e146]:
+                - cell "[TEST-RUN] Article autora2" [ref=e147]:
+                  - link "[TEST-RUN] Article autora2" [ref=e148] [cursor=pointer]:
+                    - /url: /admin/articles/01KP57D0CCCEFJCBFV1775CSWF
+                - cell "Тестовый автор 2" [ref=e149]
+                - cell "Черновик" [ref=e150]:
+                  - generic [ref=e152]: Черновик
+                - cell "✅ Одобрено" [ref=e153]:
+                  - link "✅ Одобрено" [ref=e154] [cursor=pointer]:
+                    - /url: /admin/articles/01KP57D0CCCEFJCBFV1775CSWF/review
+                    - generic [ref=e155]:
+                      - generic [ref=e156]: ✅
+                      - text: Одобрено
+                - cell "14.04.2026" [ref=e157]
+                - cell "Редактировать История" [ref=e158]:
+                  - generic [ref=e159]:
+                    - link "Редактировать" [ref=e160] [cursor=pointer]:
+                      - /url: /admin/articles/01KP57D0CCCEFJCBFV1775CSWF
+                    - link "История" [ref=e161] [cursor=pointer]:
+                      - /url: /admin/articles/01KP57D0CCCEFJCBFV1775CSWF/history
+              - row "[TEST-RUN] Уведомление Test Author Опубликовано — 14.04.2026 Редактировать История Скрыть" [ref=e162]:
+                - cell "[TEST-RUN] Уведомление" [ref=e163]:
+                  - link "[TEST-RUN] Уведомление" [ref=e164] [cursor=pointer]:
+                    - /url: /admin/articles/01KP570X33P28B7ZSTYEBCDWM3
+                - cell "Test Author" [ref=e165]
+                - cell "Опубликовано" [ref=e166]:
+                  - generic [ref=e168]: Опубликовано
+                - cell "—" [ref=e169]
+                - cell "14.04.2026" [ref=e170]
+                - cell "Редактировать История Скрыть" [ref=e171]:
+                  - generic [ref=e172]:
+                    - link "Редактировать" [ref=e173] [cursor=pointer]:
+                      - /url: /admin/articles/01KP570X33P28B7ZSTYEBCDWM3
+                    - link "История" [ref=e174] [cursor=pointer]:
+                      - /url: /admin/articles/01KP570X33P28B7ZSTYEBCDWM3/history
+                    - button "Скрыть" [ref=e175]
+              - 'row "Интерактивные MDX-компоненты: раскрывающийся контент Администратор Опубликовано — 13.04.2026 Редактировать История Скрыть" [ref=e176]':
+                - 'cell "Интерактивные MDX-компоненты: раскрывающийся контент" [ref=e177]':
+                  - 'link "Интерактивные MDX-компоненты: раскрывающийся контент" [ref=e178] [cursor=pointer]':
+                    - /url: /admin/articles/01KP41BCKMXDGZAFDRYM1W5HRH
+                - cell "Администратор" [ref=e179]
+                - cell "Опубликовано" [ref=e180]:
+                  - generic [ref=e182]: Опубликовано
+                - cell "—" [ref=e183]
+                - cell "13.04.2026" [ref=e184]
+                - cell "Редактировать История Скрыть" [ref=e185]:
+                  - generic [ref=e186]:
+                    - link "Редактировать" [ref=e187] [cursor=pointer]:
+                      - /url: /admin/articles/01KP41BCKMXDGZAFDRYM1W5HRH
+                    - link "История" [ref=e188] [cursor=pointer]:
+                      - /url: /admin/articles/01KP41BCKMXDGZAFDRYM1W5HRH/history
+                    - button "Скрыть" [ref=e189]
+              - row "[TEST-RUN] Smoke Test Article Тестовый автор 2 Черновик — 13.04.2026 Редактировать История" [ref=e190]:
+                - cell "[TEST-RUN] Smoke Test Article" [ref=e191]:
+                  - link "[TEST-RUN] Smoke Test Article" [ref=e192] [cursor=pointer]:
+                    - /url: /admin/articles/01KP40KBZ5HM75EQM7X6R2VAZN
+                - cell "Тестовый автор 2" [ref=e193]
+                - cell "Черновик" [ref=e194]:
+                  - generic [ref=e196]: Черновик
+                - cell "—" [ref=e197]
+                - cell "13.04.2026" [ref=e198]
+                - cell "Редактировать История" [ref=e199]:
+                  - generic [ref=e200]:
+                    - link "Редактировать" [ref=e201] [cursor=pointer]:
+                      - /url: /admin/articles/01KP40KBZ5HM75EQM7X6R2VAZN
+                    - link "История" [ref=e202] [cursor=pointer]:
+                      - /url: /admin/articles/01KP40KBZ5HM75EQM7X6R2VAZN/history
+              - row "Моя первая статья Тестик Черновик — 13.04.2026 Редактировать История" [ref=e203]:
+                - cell "Моя первая статья" [ref=e204]:
+                  - link "Моя первая статья" [ref=e205] [cursor=pointer]:
+                    - /url: /admin/articles/01KP3H8B3YQBATMYTE15ARF2BB
+                - cell "Тестик" [ref=e206]
+                - cell "Черновик" [ref=e207]:
+                  - generic [ref=e209]: Черновик
+                - cell "—" [ref=e210]
+                - cell "13.04.2026" [ref=e211]
+                - cell "Редактировать История" [ref=e212]:
+                  - generic [ref=e213]:
+                    - link "Редактировать" [ref=e214] [cursor=pointer]:
+                      - /url: /admin/articles/01KP3H8B3YQBATMYTE15ARF2BB
+                    - link "История" [ref=e215] [cursor=pointer]:
+                      - /url: /admin/articles/01KP3H8B3YQBATMYTE15ARF2BB/history
+              - 'row "Next.js App Router: практическое руководство Test Author Опубликовано — 13.04.2026 Редактировать История Скрыть" [ref=e216]':
+                - 'cell "Next.js App Router: практическое руководство" [ref=e217]':
+                  - 'link "Next.js App Router: практическое руководство" [ref=e218] [cursor=pointer]':
+                    - /url: /admin/articles/01KP3G5MNZ7BG7596AWKMFRQ53
+                - cell "Test Author" [ref=e219]
+                - cell "Опубликовано" [ref=e220]:
+                  - generic [ref=e222]: Опубликовано
+                - cell "—" [ref=e223]
+                - cell "13.04.2026" [ref=e224]
+                - cell "Редактировать История Скрыть" [ref=e225]:
+                  - generic [ref=e226]:
+                    - link "Редактировать" [ref=e227] [cursor=pointer]:
+                      - /url: /admin/articles/01KP3G5MNZ7BG7596AWKMFRQ53
+                    - link "История" [ref=e228] [cursor=pointer]:
+                      - /url: /admin/articles/01KP3G5MNZ7BG7596AWKMFRQ53/history
+                    - button "Скрыть" [ref=e229]
+              - row "Полезные utility-типы в TypeScript Администратор Опубликовано — 12.04.2026 Редактировать История Скрыть" [ref=e230]:
+                - cell "Полезные utility-типы в TypeScript" [ref=e231]:
+                  - link "Полезные utility-типы в TypeScript" [ref=e232] [cursor=pointer]:
+                    - /url: /admin/articles/01KP41BCKJF2A03BZDRWSSM49C
+                - cell "Администратор" [ref=e233]
+                - cell "Опубликовано" [ref=e234]:
+                  - generic [ref=e236]: Опубликовано
+                - cell "—" [ref=e237]
+                - cell "12.04.2026" [ref=e238]
+                - cell "Редактировать История Скрыть" [ref=e239]:
+                  - generic [ref=e240]:
+                    - link "Редактировать" [ref=e241] [cursor=pointer]:
+                      - /url: /admin/articles/01KP41BCKJF2A03BZDRWSSM49C
+                    - link "История" [ref=e242] [cursor=pointer]:
+                      - /url: /admin/articles/01KP41BCKJF2A03BZDRWSSM49C/history
+                    - button "Скрыть" [ref=e243]
+  - contentinfo [ref=e244]:
+    - generic [ref=e245]:
+      - paragraph [ref=e246]: © 2026 devblog
+      - link "RSS-фид" [ref=e247] [cursor=pointer]:
+        - /url: /feed.xml
+        - img [ref=e248]
+  - button "Open Next.js Dev Tools" [ref=e256] [cursor=pointer]:
+    - img [ref=e257]
+  - alert [ref=e260]

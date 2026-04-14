@@ -1,0 +1,49 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "devblog" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e5]:
+        - link "Главная" [ref=e6] [cursor=pointer]:
+          - /url: /
+        - link "Блог" [ref=e7] [cursor=pointer]:
+          - /url: /blog
+        - button "Toggle theme" [ref=e8]:
+          - img [ref=e9]
+  - main [ref=e15]:
+    - generic [ref=e16]:
+      - navigation [ref=e17]:
+        - generic [ref=e18]:
+          - generic [ref=e19]:
+            - link "Ревью" [ref=e20] [cursor=pointer]:
+              - /url: /reviewer
+            - generic [ref=e21]:
+              - link "Назначения" [ref=e22] [cursor=pointer]:
+                - /url: /reviewer/assignments
+              - link "Уведомления 6" [ref=e23] [cursor=pointer]:
+                - /url: /reviewer/notifications
+                - text: Уведомления
+                - generic [ref=e24]: "6"
+          - button "Выйти" [ref=e26]
+      - main [ref=e27]:
+        - generic [ref=e28]:
+          - link "← Назад к ревью" [ref=e30] [cursor=pointer]:
+            - /url: /reviewer/assignments/01KP5F70P0QFG89BWN0B6N0MP7
+          - heading "История версий" [level=1] [ref=e31]
+          - paragraph [ref=e32]: "[TEST-RUN] Review Workflow"
+          - button "14 апреля 2026 г. в 10:45 Версия для ревью Без описания Review Workflow This is the main review test article. js console.log \"hello\" ; Показать содержимое ↓" [ref=e37]:
+            - generic [ref=e38]:
+              - generic [ref=e39]: 14 апреля 2026 г. в 10:45
+              - generic [ref=e40]: Версия для ревью
+            - paragraph [ref=e41]: Без описания
+            - paragraph [ref=e42]: Review Workflow This is the main review test article. js console.log "hello" ;
+            - generic [ref=e43]: Показать содержимое ↓
+  - contentinfo [ref=e44]:
+    - generic [ref=e45]:
+      - paragraph [ref=e46]: © 2026 devblog
+      - link "RSS-фид" [ref=e47] [cursor=pointer]:
+        - /url: /feed.xml
+        - img [ref=e48]
+  - button "Open Next.js Dev Tools" [ref=e56] [cursor=pointer]:
+    - img [ref=e57]
+  - alert [ref=e60]

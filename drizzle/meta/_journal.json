@@ -8,6 +8,69 @@
       "when": 1773597981868,
       "tag": "0000_lame_champions",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1775983794981,
+      "tag": "0001_third_sway",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1775995125869,
+      "tag": "0002_tiresome_doctor_octopus",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1776023858376,
+      "tag": "0003_far_la_nuit",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1776028008327,
+      "tag": "0004_even_leper_queen",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1776069108316,
+      "tag": "0005_curved_synch",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1776071970481,
+      "tag": "0006_overjoyed_ravenous",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1776075586486,
+      "tag": "0007_hard_madripoor",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1776079455621,
+      "tag": "0008_adorable_morbius",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1744574400000,
+      "tag": "0009_rename_email_to_username",
+      "breakpoints": true
     }
   ]
 }

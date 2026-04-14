@@ -1,0 +1,46 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "devblog" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e5]:
+        - link "Главная" [ref=e6] [cursor=pointer]:
+          - /url: /
+        - link "Блог" [ref=e7] [cursor=pointer]:
+          - /url: /blog
+        - button "Toggle theme" [ref=e8]:
+          - img [ref=e9]
+  - main [ref=e15]:
+    - generic [ref=e16]:
+      - heading "Закладки" [level=1] [ref=e17]
+      - generic [ref=e18]:
+        - generic [ref=e19]:
+          - generic [ref=e20]:
+            - link "Полезные utility-типы в TypeScript" [ref=e21] [cursor=pointer]:
+              - /url: /blog/typescript-utility-types
+            - button "Убрать" [ref=e22]
+          - paragraph [ref=e23]: "Обзор встроенных utility-типов: Pick, Omit, Partial, Required, Record и когда их применять."
+          - generic [ref=e24]:
+            - generic [ref=e25]: Добавлено 14 апреля 2026 г.
+            - generic [ref=e26]: typescript
+            - generic [ref=e27]: типы
+        - generic [ref=e28]:
+          - generic [ref=e29]:
+            - 'link "Drizzle ORM: быстрый старт с SQLite" [ref=e30] [cursor=pointer]':
+              - /url: /blog/drizzle-orm-intro
+            - button "Убрать" [ref=e31]
+          - paragraph [ref=e32]: "Настройка Drizzle ORM с SQLite: схема, миграции и типобезопасные запросы."
+          - generic [ref=e33]:
+            - generic [ref=e34]: Добавлено 14 апреля 2026 г.
+            - generic [ref=e35]: drizzle
+            - generic [ref=e36]: sqlite
+            - generic [ref=e37]: orm
+  - contentinfo [ref=e38]:
+    - generic [ref=e39]:
+      - paragraph [ref=e40]: © 2026 devblog
+      - link "RSS-фид" [ref=e41] [cursor=pointer]:
+        - /url: /feed.xml
+        - img [ref=e42]
+  - button "Open Next.js Dev Tools" [ref=e50] [cursor=pointer]:
+    - img [ref=e51]
+  - alert [ref=e54]

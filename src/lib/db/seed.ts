@@ -1,44 +1,46 @@
 import { db } from "./index";
-import { profile, articles } from "./schema";
+import { profile, articles, users } from "./schema";
 import { ulid } from "ulid";
+import bcrypt from "bcryptjs";
 
 const now = Math.floor(Date.now() / 1000);
 
 async function seed() {
-// Seed profile
-await db.insert(profile)
-  .values({
-    id: "main",
-    name: "Denjamin",
-    bio: "Разработчик. Пишу о коде, инструментах и процессах разработки.",
-    avatarUrl: null,
-    links: JSON.stringify({
-      github: "https://github.com/denjamin",
-      email: "hello@example.com",
-    }),
-    updatedAt: now,
-  })
-  .onConflictDoUpdate({
-    target: profile.id,
-    set: {
+  // Seed profile
+  await db
+    .insert(profile)
+    .values({
+      id: "main",
       name: "Denjamin",
       bio: "Разработчик. Пишу о коде, инструментах и процессах разработки.",
+      avatarUrl: null,
       links: JSON.stringify({
         github: "https://github.com/denjamin",
         email: "hello@example.com",
       }),
       updatedAt: now,
-    },
-  });
+    })
+    .onConflictDoUpdate({
+      target: profile.id,
+      set: {
+        name: "Denjamin",
+        bio: "Разработчик. Пишу о коде, инструментах и процессах разработки.",
+        links: JSON.stringify({
+          github: "https://github.com/denjamin",
+          email: "hello@example.com",
+        }),
+        updatedAt: now,
+      },
+    });
 
-console.log("Profile seeded");
+  console.log("Profile seeded");
 
-// Seed articles
-const article1 = {
-  id: ulid(),
-  slug: "typescript-utility-types",
-  title: "Полезные utility-типы в TypeScript",
-  content: `TypeScript предоставляет набор встроенных utility-типов, которые упрощают работу с типами.
+  // Seed articles
+  const article1 = {
+    id: ulid(),
+    slug: "typescript-utility-types",
+    title: "Полезные utility-типы в TypeScript",
+    content: `TypeScript предоставляет набор встроенных utility-типов, которые упрощают работу с типами.
 
 ## Pick и Omit
 
@@ -89,19 +91,20 @@ const features: StatusMap = {
 \`\`\`
 
 Эти типы покрывают большинство повседневных задач при работе с TypeScript.`,
-  excerpt: "Обзор встроенных utility-типов: Pick, Omit, Partial, Required, Record и когда их применять.",
-  tags: JSON.stringify(["typescript", "типы"]),
-  status: "published" as const,
-  publishedAt: now - 86400,
-  createdAt: now - 86400 * 2,
-  updatedAt: now - 86400,
-};
+    excerpt:
+      "Обзор встроенных utility-типов: Pick, Omit, Partial, Required, Record и когда их применять.",
+    tags: JSON.stringify(["typescript", "типы"]),
+    status: "published" as const,
+    publishedAt: now - 86400,
+    createdAt: now - 86400 * 2,
+    updatedAt: now - 86400,
+  };
 
-const article2 = {
-  id: ulid(),
-  slug: "drizzle-orm-intro",
-  title: "Drizzle ORM: быстрый старт с SQLite",
-  content: `Drizzle ORM — лёгкий и типобезопасный ORM для TypeScript. Рассмотрим базовую настройку с SQLite.
+  const article2 = {
+    id: ulid(),
+    slug: "drizzle-orm-intro",
+    title: "Drizzle ORM: быстрый старт с SQLite",
+    content: `Drizzle ORM — лёгкий и типобезопасный ORM для TypeScript. Рассмотрим базовую настройку с SQLite.
 
 ## Установка
 
@@ -154,19 +157,20 @@ const recent = await db
 \`\`\`
 
 Drizzle отлично подходит для проектов, где важна типобезопасность без overhead тяжёлых ORM.`,
-  excerpt: "Настройка Drizzle ORM с SQLite: схема, миграции и типобезопасные запросы.",
-  tags: JSON.stringify(["drizzle", "sqlite", "orm"]),
-  status: "published" as const,
-  publishedAt: now,
-  createdAt: now - 86400,
-  updatedAt: now,
-};
+    excerpt:
+      "Настройка Drizzle ORM с SQLite: схема, миграции и типобезопасные запросы.",
+    tags: JSON.stringify(["drizzle", "sqlite", "orm"]),
+    status: "published" as const,
+    publishedAt: now,
+    createdAt: now - 86400,
+    updatedAt: now,
+  };
 
-const article3 = {
-  id: ulid(),
-  slug: "mdx-interactive-components",
-  title: "Интерактивные MDX-компоненты: раскрывающийся контент",
-  content: `В этом блоге используются кастомные MDX-компоненты, которые делают статьи интерактивными.
+  const article3 = {
+    id: ulid(),
+    slug: "mdx-interactive-components",
+    title: "Интерактивные MDX-компоненты: раскрывающийся контент",
+    content: `В этом блоге используются кастомные MDX-компоненты, которые делают статьи интерактивными.
 
 ## Раскрывающийся контент
 
@@ -199,34 +203,62 @@ function formatPost(post: BlogPost): string {
 \`\`\`
 
 Все эти компоненты можно комбинировать в одной статье для максимальной интерактивности.`,
-  excerpt: "Обзор кастомных MDX-компонентов блога: Expandable для скрытого контента.",
-  tags: JSON.stringify(["mdx", "компоненты", "интерактивность"]),
-  status: "published" as const,
-  publishedAt: now,
-  createdAt: now,
-  updatedAt: now,
-};
+    excerpt:
+      "Обзор кастомных MDX-компонентов блога: Expandable для скрытого контента.",
+    tags: JSON.stringify(["mdx", "компоненты", "интерактивность"]),
+    status: "published" as const,
+    publishedAt: now,
+    createdAt: now,
+    updatedAt: now,
+  };
 
-for (const article of [article1, article2, article3]) {
-  await db.insert(articles)
-    .values(article)
+  for (const article of [article1, article2, article3]) {
+    await db
+      .insert(articles)
+      .values(article)
+      .onConflictDoUpdate({
+        target: articles.slug,
+        set: {
+          title: article.title,
+          content: article.content,
+          excerpt: article.excerpt,
+          tags: article.tags,
+          status: article.status,
+          publishedAt: article.publishedAt,
+          updatedAt: article.updatedAt,
+        },
+      });
+  }
+
+  console.log("Articles seeded (3 articles)");
+
+  // Seed test reviewer
+  const reviewerPasswordHash = await bcrypt.hash("reviewer123", 10);
+  await db
+    .insert(users)
+    .values({
+      id: ulid(),
+      username: "reviewer",
+      name: "Тестовый ревьер",
+      role: "reviewer",
+      passwordHash: reviewerPasswordHash,
+      createdAt: now,
+      updatedAt: now,
+    })
     .onConflictDoUpdate({
-      target: articles.slug,
+      target: users.username,
       set: {
-        title: article.title,
-        content: article.content,
-        excerpt: article.excerpt,
-        tags: article.tags,
-        status: article.status,
-        publishedAt: article.publishedAt,
-        updatedAt: article.updatedAt,
+        name: "Тестовый ревьер",
+        updatedAt: now,
       },
     });
-}
 
-console.log("Articles seeded (3 articles)");
+  console.log("Test reviewer seeded (username: reviewer / reviewer123)");
 }
 
 seed()
   .then(() => process.exit(0))
-  .catch((err) => { console.error(err); process.exit(1); });
+  .catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });

@@ -1,0 +1,66 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "devblog" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e5]:
+        - link "Главная" [ref=e6] [cursor=pointer]:
+          - /url: /
+        - link "Блог" [ref=e7] [cursor=pointer]:
+          - /url: /blog
+        - button "Toggle theme" [ref=e8]:
+          - img [ref=e9]
+  - main [ref=e15]:
+    - generic [ref=e16]:
+      - navigation [ref=e17]:
+        - generic [ref=e18]:
+          - generic [ref=e19]:
+            - link "Кабинет автора" [ref=e20] [cursor=pointer]:
+              - /url: /author
+            - generic [ref=e21]:
+              - link "Мои статьи" [ref=e22] [cursor=pointer]:
+                - /url: /author/articles
+              - link "Профиль" [ref=e23] [cursor=pointer]:
+                - /url: /author/profile
+              - link "Уведомления 1" [ref=e24] [cursor=pointer]:
+                - /url: /author/notifications
+                - text: Уведомления
+                - generic [ref=e25]: "1"
+              - link "Сайт →" [ref=e26] [cursor=pointer]:
+                - /url: /
+          - button "Выйти" [ref=e28]
+      - main [ref=e29]:
+        - generic [ref=e30]:
+          - generic [ref=e31]:
+            - generic [ref=e32]:
+              - heading "История изменений" [level=1] [ref=e33]
+              - paragraph [ref=e34]: "[TEST-RUN] Article autora2"
+            - link "← К редактированию" [ref=e35] [cursor=pointer]:
+              - /url: /author/articles/01KP57D0CCCEFJCBFV1775CSWF
+          - generic [ref=e36]:
+            - group [ref=e37]:
+              - generic "14.04.2026, 08:43:51" [ref=e38] [cursor=pointer]:
+                - generic [ref=e40]: 14.04.2026, 08:43:51
+            - group [ref=e41]:
+              - generic "14.04.2026, 08:38:51" [ref=e42] [cursor=pointer]:
+                - generic [ref=e44]: 14.04.2026, 08:38:51
+            - group [ref=e45]:
+              - generic "14.04.2026, 08:31:02 — Исправлена опечатка" [ref=e46] [cursor=pointer]:
+                - generic [ref=e47]:
+                  - generic [ref=e48]: 14.04.2026, 08:31:02
+                  - generic [ref=e49]: — Исправлена опечатка
+            - group [ref=e50]:
+              - generic "14.04.2026, 08:29:39" [ref=e51] [cursor=pointer]:
+                - generic [ref=e53]: 14.04.2026, 08:29:39
+            - group [ref=e54]:
+              - generic "14.04.2026, 08:29:06" [ref=e55] [cursor=pointer]:
+                - generic [ref=e57]: 14.04.2026, 08:29:06
+  - contentinfo [ref=e58]:
+    - generic [ref=e59]:
+      - paragraph [ref=e60]: © 2026 devblog
+      - link "RSS-фид" [ref=e61] [cursor=pointer]:
+        - /url: /feed.xml
+        - img [ref=e62]
+  - button "Open Next.js Dev Tools" [ref=e70] [cursor=pointer]:
+    - img [ref=e71]
+  - alert [ref=e74]

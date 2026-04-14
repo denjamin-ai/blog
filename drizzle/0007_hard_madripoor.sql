@@ -1,0 +1,11 @@
+ALTER TABLE `articles` ADD `scheduled_at` integer;--> statement-breakpoint
+ALTER TABLE `articles` ADD `og_title` text;--> statement-breakpoint
+ALTER TABLE `articles` ADD `og_description` text;--> statement-breakpoint
+ALTER TABLE `articles` ADD `og_image` text;--> statement-breakpoint
+ALTER TABLE `profile` ADD `default_og_image` text;--> statement-breakpoint
+ALTER TABLE `users` ADD `display_name` text;--> statement-breakpoint
+ALTER TABLE `users` ADD `bio` text;--> statement-breakpoint
+ALTER TABLE `users` ADD `avatar_url` text;--> statement-breakpoint
+ALTER TABLE `users` ADD `links` text;--> statement-breakpoint
+ALTER TABLE `users` ADD `slug` text;--> statement-breakpoint
+CREATE UNIQUE INDEX `users_slug_unique` ON `users` (`slug`);

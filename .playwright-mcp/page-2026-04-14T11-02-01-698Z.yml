@@ -1,0 +1,52 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "devblog" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e5]:
+        - link "Главная" [ref=e6] [cursor=pointer]:
+          - /url: /
+        - link "Блог" [ref=e7] [cursor=pointer]:
+          - /url: /blog
+        - button "Toggle theme" [ref=e8]:
+          - img [ref=e9]
+  - main [ref=e15]:
+    - generic [ref=e16]:
+      - navigation [ref=e17]:
+        - generic [ref=e18]:
+          - generic [ref=e19]:
+            - link "Админка" [ref=e20] [cursor=pointer]:
+              - /url: /admin
+            - generic [ref=e21]:
+              - link "Статьи" [ref=e22] [cursor=pointer]:
+                - /url: /admin/articles
+              - link "Пользователи" [ref=e23] [cursor=pointer]:
+                - /url: /admin/users
+              - link "Уведомления" [ref=e24] [cursor=pointer]:
+                - /url: /admin/notifications
+              - link "Настройки" [ref=e25] [cursor=pointer]:
+                - /url: /admin/settings
+              - link "Сайт →" [ref=e26] [cursor=pointer]:
+                - /url: /
+          - button "Выйти" [ref=e28]
+      - main [ref=e29]:
+        - generic [ref=e30]:
+          - paragraph [ref=e31]: Предпросмотр — статья не опубликована
+          - generic [ref=e32]:
+            - article [ref=e33]:
+              - generic [ref=e34]:
+                - 'heading "Drizzle ORM: быстрый старт с SQLite" [level=1] [ref=e35]'
+                - generic [ref=e36]:
+                  - generic [ref=e37]: 13 апреля 2026 г.
+                  - generic [ref=e38]: 1 мин чтения
+              - paragraph [ref=e40]: test
+            - complementary [ref=e41]
+  - contentinfo [ref=e42]:
+    - generic [ref=e43]:
+      - paragraph [ref=e44]: © 2026 devblog
+      - link "RSS-фид" [ref=e45] [cursor=pointer]:
+        - /url: /feed.xml
+        - img [ref=e46]
+  - button "Open Next.js Dev Tools" [ref=e54] [cursor=pointer]:
+    - img [ref=e55]
+  - alert [ref=e58]

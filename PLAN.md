@@ -26,6 +26,12 @@
 | 5. Ревью Фаз 1–4 | Done | 2026-03-15 |
 | 6. MDX-компоненты (Expandable, Run) | Done | 2026-03-15 |
 | 7. Деплой (Turso-ready) | Done | 2026-03-15 |
+| 8. Базовая дистрибуция (SEO, RSS, Share) | Done | 2026-04-12 |
+| 9. Ревью-пайплайн (базовый) | Done | 2026-04-12 |
+| 10. UX статьи (TOC, reading-time, upload) | Done | 2026-04-13 |
+| 11. Расширенный ревью-пайплайн | Done | 2026-04-13 |
+| 12. Ревью Фазы 12 (вовлечение) | Done | 2026-04-13 |
+| 13. Финальный ревью фаз 8–13 | Done | 2026-04-13 |
 
 ---
 
@@ -108,6 +114,119 @@
   5. Запустить seed: `TURSO_CONNECTION_URL=... TURSO_AUTH_TOKEN=... npx tsx src/lib/db/seed.ts`
 - **Валидация**: `npm run build` OK, dev-сервер с libsql OK, API auth OK
 - **Файлы**: src/lib/db/index.ts, drizzle.config.ts, src/lib/db/seed.ts
+
+### Фаза 8: Базовая дистрибуция — SEO, RSS, Share (Done)
+- **Что сделано**:
+  - OG-теги и Twitter Cards (`twitter:card: summary_large_image`, `og:type: article`, `article:published_time`, `article:author`, `og:image` из profile.avatarUrl) на `/blog/[slug]`
+  - Canonical URLs на всех публичных страницах (`/`, `/blog`, `/blog/[slug]`)
+  - `metadataBase` в корневом layout для формирования абсолютных URL
+  - `generateMetadata()` на главной странице с данными из profile
+  - sitemap.xml — скорректированы приоритеты: `/` 1.0, `/blog` 0.8, статьи 0.6
+  - robots.txt — явные Allow-правила + wildcards для Disallow
+  - RSS 2.0 фид (`/feed.xml`) — title, link, description, pubDate, author, category из тегов; excerpt или plain-text из MDX
+  - `ShareButton` клиентский компонент — Telegram, ВКонтакте, X, «Копировать ссылку» (✓ на 2 сек); кнопка неактивна если Clipboard API недоступен
+  - RSS-иконка (SVG) в Footer
+- **OG image**: `og:image` использует `articles.coverImageUrl` с fallback на `profile.avatarUrl` (реализовано вместе с Фазой 10)
+- **Валидация**: `npm run build` OK (52 роута, новый `/feed.xml`)
+- **Файлы**:
+  - `src/app/layout.tsx` — metadataBase
+  - `src/app/sitemap.ts` — приоритеты
+  - `src/app/robots.ts` — Allow + wildcards
+  - `src/app/page.tsx` — generateMetadata
+  - `src/app/blog/page.tsx` — canonical
+  - `src/app/blog/[slug]/page.tsx` — расширенный generateMetadata + ShareButton
+  - `src/app/feed.xml/route.ts` — новый RSS Route Handler
+  - `src/components/share-button.tsx` — новый клиентский компонент
+  - `src/components/footer.tsx` — RSS-иконка
+  - `src/app/globals.css` — стили `.share-btn`
+  - `src/lib/utils.ts` — утилита `mdxToPlainText`
+
+### Ревью Фазы 8 (Done)
+- **Найдено**: 0 P0, 1 P1, 2 P2, 1 P3
+- **Исправлено**:
+  1. P1 `share-button.tsx` — `clipboardUnavailable` через `useState` не работал из-за SSR (initializer выполнялся на сервере, где `navigator` не определён, и React сохранял серверное `false` при гидратации). Заменено на `useEffect(() => setClipboardAvailable(!!navigator?.clipboard), [])`.
+  2. P2 `feed.xml/route.ts` — несогласованный fallback URL (`"http://..."` vs `"https://..."` в sitemap.ts). Выровнено на `https://localhost:3000`.
+  3. P2 `feed.xml/route.ts` — `<author>` в RSS 2.0 требует email-адрес по спецификации. Заменено на `<dc:creator>` (Dublin Core namespace `xmlns:dc="http://purl.org/dc/elements/1.1/"`).
+  4. P3 `blog/[slug]/page.tsx` — `description` в `generateMetadata` не имел fallback на контент статьи. Добавлен `mdxToPlainText(row.content)` как fallback.
+  5. Рефакторинг: `mdxToPlainText` вынесена из `feed.xml/route.ts` в `src/lib/utils.ts`.
+- **Повторная валидация**: `npm run build` OK
+
+### Фаза 9: Ревью-пайплайн базовый (Done)
+- **Что сделано**:
+  - **Схема**: `verdict`/`verdictNote` в `reviewAssignments`; `resolvedAt`/`resolvedBy` в `reviewComments`; `review_comment_reopened` в enum уведомлений; миграция `0003_far_la_nuit.sql`
+  - **Diff (US-RV15)**: утилита `src/lib/diff.ts` (пакет `diff`), `GET /api/reviewer/assignments/[id]/diff`, компонент `DiffView` с переключателем Diff/Полный текст; вкладки «Статья/Изменения» в `review-view.tsx`
+  - **Разрешение замечаний (US-RV16, US-A24)**: `PUT /api/review-comments/[id]/resolve` — автор/админ разрешают, ревьюер переоткрывает (US-RV20); уведомление `review_comment_reopened`; компонент `ReviewProgress`; бейджи 🔴/🟢; фильтры «Все/Открытые/Решённые»
+  - **Прогресс у автора (US-A25)**: сводка «Замечаний M | Решено N | Открыто K» на странице редактирования
+  - **Версионная осведомлённость (US-A23)**: «Ревьюер видит версию от [дата]» + жёлтое предупреждение при расхождении; кнопка «Уведомить ревьюера» подсвечивается
+  - **Вердикт (US-RV18, US-A26)**: `VerdictModal` с 3 радиокнопками + предупреждение о незакрытых замечаниях; `VerdictBadge`; PATCH требует `verdict` при `status=completed`; verdict в payload уведомления `review_completed`
+  - **Таблица статей (US-AD34)**: колонка «Ревью» с последним вердиктом в `/admin/articles`
+  - **Доступ автора к комментариям**: `GET /api/assignments/[id]/review-comments` расширен для article author (read-only)
+  - **API автора расширен**: `/api/author/assignments?articleId=X` теперь возвращает `versionCreatedAt`, `verdict`, `verdictNote`, `totalComments`, `resolvedCount`
+- **Валидация**: `npm run build` OK (54 роута, 0 ошибок TypeScript)
+
+### Фаза 10: UX статьи (Done)
+- **Что сделано**:
+  - `TableOfContents` — клиентский компонент с IntersectionObserver, desktop sidebar (sticky) + mobile collapsible (`<details>`), поддержка h2–h4, slug-дедупликация, code-block-aware парсинг
+  - `DifficultyBadge` — бейдж сложности (simple/medium/hard), тёмная/светлая тема
+  - `estimateReadingTime` — чистая функция, учитывает код-блоки
+  - `coverImageUrl` в схеме и CRUD: обложка статьи в БД, загрузка через `/api/upload`, отображение на странице и в ArticleCard
+  - `/api/upload` — POST endpoint, whitelist MIME, 2 МБ лимит, ULID-имена файлов
+  - OG-теги обновлены: `coverImageUrl ?? profile.avatarUrl` в generateMetadata
+- **Валидация**: `npm run build` OK (57 роутов)
+
+### Ревью Фазы 10 (Done)
+- **Найдено**: 2 P0, 1 P1, 1 P2, 2 P3
+- **Исправлено**:
+  1. **P0** `upload/route.ts` — DoS: `Content-Length` проверяется ДО буферизации файла
+  2. **P0** `upload/route.ts` — MIME-спуфинг: добавлена проверка magic bytes через `file-type` пакет (npm install file-type); клиентский `file.type` больше не используется
+  3. **P1** `articles/route.ts` (POST) + `articles/[id]/route.ts` (PUT) — `coverImageUrl` теперь принимается только если начинается с `/uploads/`; произвольные URL отбрасываются
+  4. **P2** `toc.tsx` — `parseHeadings` обёрнут в `useMemo([content])`; убран `eslint-disable`
+  5. **P3** `toc.tsx` — `observerRef.current = null` после `disconnect()` в cleanup
+  6. **P3** `toc.tsx` — добавлен `aria-controls={slug}` на каждую кнопку TOC
+- **Не проблемы**: XSS в TOC (React auto-escapes), Image компонент (корректен), responsive layout (корректен)
+- **Повторная валидация**: `npm run build` OK (57 роутов, 0 ошибок TypeScript)
+
+### Ревью Фазы 9 (Done)
+- **Найдено**: 1 P0, 2 P1, 1 P2, 1 P3
+- **Исправлено**:
+  1. **P0** `resolve/route.ts:108` — `resolvedBy` хранил строку `"admin"` вместо `null`, нарушая FK → `users.id`. Исправлено: `session.userId ?? null` (admin хранится как `null`, аналогично `authorId` в комментариях)
+  2. **P1** `author/assignments/route.ts` — N+1: N запросов для подсчёта комментариев. Исправлено: один `inArray` batch-запрос + in-memory группировка
+  3. **P1** `author-assignment-thread.tsx` — UI показывал кнопку «Переоткрыть» автору (нарушение US-RV20: только ревьюер может переоткрыть). Исправлено: автор видит только «Решено» на незакрытых reviewer-комментариях
+  4. **P2** `reviewer/assignments/[id]/route.ts` — отсутствие терминальных состояний `completed: []`, `declined: []` в state machine. Добавлены для ясности
+  5. **P3** `resolve/route.ts` — race condition: если комментарий удалён между UPDATE и SELECT, возвращался `null`. Исправлено: 404 при `updated === null`
+- **Повторная валидация**: `npm run build` OK
+
+### Фаза 11: Расширенный ревью-пайплайн (Done)
+- **Что сделано**:
+  - **US-RV17 — Фильтр «Без ответа»**: в `review-view.tsx` добавлен четвёртый режим фильтрации; логика — reviewer-комментарии верхнего уровня без ни одного admin-ответа; счётчик в label; «Все замечания получили ответ» при пустом наборе
+  - **US-RV19 — Чеклист у ревьюера**: компонент `ReviewChecklist` с прогрессом «Проверено K из L», интерактивные чекбоксы (PUT при каждом клике), скрыт если items=[]; вставлен над filter bar в `review-view.tsx`
+  - **US-AD33 — Шаблон чеклиста у админа**: страница `/admin/settings` (ссылка в nav), компонент `ChecklistTemplateEditor` с добавлением/удалением/сортировкой (↑↓) пунктов; шаблон копируется при создании назначения (admin POST + send_for_review); изменение шаблона не затрагивает созданные чеклисты
+  - **US-A27 — Diff-превью для автора**: кнопка «Уведомить ревьюера» открывает `DiffPreviewModal` с `DiffView`; «Статья не менялась» если нет diff; отдельный endpoint `/api/author/assignments/[id]/diff` с ownership-проверкой
+  - **US-AD35 — Diff для админа**: кнопка «Показать изменения» в `assignment-thread.tsx` раскрывает `DiffView` (max-h-96); endpoint `/api/admin/assignments/[id]/diff`
+  - **Чеклист read-only**: добавлен в `author-assignment-thread.tsx` и admin `assignment-thread.tsx`
+  - **DB**: таблица `review_checklists`, колонка `profile.checklist_template`; миграция `0005_curved_synch.sql`
+  - **DiffView**: добавлен prop `diffUrl` для переиспользования с разными endpoint'ами
+- **Валидация**: `npm run build` OK (63 роута, 0 ошибок TypeScript)
+
+### Финальный ревью фаз 8–13 (Done)
+- **Найдено**: 2 P0, 3 P1, 2 P2
+- **Исправлено**:
+  1. **P0** `schema.ts` — отсутствовали `uniqueIndex` на таблицах `bookmarks`, `articleVotes`, `commentVotes`, `subscriptions` (JTBD требует DB-level unique constraint). Заменены `index()` на `uniqueIndex()`. Миграция `0008_adorable_morbius.sql`.
+  2. **P0** `schema.ts` — поле `reviewAssignments.verdict` было `text()` без enum. Добавлен `enum: ["approved", "needs_work", "rejected"]`.
+  3. **P0** `subscriptions/route.ts` — check+insert/delete не был обёрнут в транзакцию (в отличие от `bookmarks` и `votes`). Добавлен `db.transaction()`.
+  4. **P1** `sitemap.ts` — не включал `/authors/[slug]` (US-T3). Добавлен параллельный запрос авторов + `authorRoutes` с priority 0.4.
+  5. **P1** `blog/[slug]/page.tsx` — отсутствовал JSON-LD (US-T6). Добавлен `<script type="application/ld+json">` Schema.org/Article с headline, author, publisher, datePublished, dateModified, image, mainEntityOfPage.
+  6. **P1** `feed.xml/route.ts` — Content-Type был `application/xml` вместо `application/rss+xml`.
+  7. **P2** `cron/publish/route.ts` — N+1: отдельный SELECT для каждого автора. Исправлено: один LEFT JOIN в основном запросе; batch `inArray` UPDATE; убран лишний авторский SELECT при уведомлениях.
+- **Повторная валидация**: `npm run build` OK (77 роутов, 0 ошибок TypeScript)
+
+### Ревью Фазы 12: Вовлечение (Done)
+- **Что сделано**:
+  - **Race conditions**: обёртка SELECT + мутация в `db.transaction()` для голосов по статьям (`/api/articles/[id]/votes`), голосов по комментариям (`/api/comments/[id]/votes`) и закладок (`/api/bookmarks`)
+  - **Rate limit на голосование**: добавлена `checkUserRateLimit(userId, 1000, 1)` — 1 запрос/секунду per-user; применена к обоим vote-роутам; 429 при превышении
+  - **Уже корректно**: атомарный `viewCount + 1`, batch-insert уведомлений подписчикам, SameSite=Lax на viewed_-cookie, каскадные удаления в схеме, нет N+1 на странице закладок
+- **Файлы**: `src/lib/rate-limit.ts`, `src/app/api/articles/[id]/votes/route.ts`, `src/app/api/comments/[id]/votes/route.ts`, `src/app/api/bookmarks/route.ts`
+- **Валидация**: `npm run build` OK
 
 ---
 

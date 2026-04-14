@@ -1,0 +1,35 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "devblog" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e5]:
+        - link "Главная" [ref=e6] [cursor=pointer]:
+          - /url: /
+        - link "Блог" [ref=e7] [cursor=pointer]:
+          - /url: /blog
+        - button "Toggle theme" [ref=e8]:
+          - img [ref=e9]
+  - main [ref=e11]:
+    - generic [ref=e190]:
+      - heading "Вход" [level=1] [ref=e191]
+      - generic [ref=e192]:
+        - generic [ref=e193]:
+          - generic [ref=e194]: Никнейм
+          - textbox "Никнейм" [ref=e195]:
+            - /placeholder: nickname
+        - generic [ref=e196]:
+          - generic [ref=e197]: Пароль
+          - textbox "Пароль" [ref=e198]:
+            - /placeholder: ••••••••
+        - button "Войти" [ref=e199]
+      - paragraph [ref=e200]: Аккаунты создаются администратором блога.
+  - contentinfo [ref=e59]:
+    - generic [ref=e60]:
+      - paragraph [ref=e61]: © 2026 devblog
+      - link "RSS-фид" [ref=e62] [cursor=pointer]:
+        - /url: /feed.xml
+        - img [ref=e63]
+  - button "Open Next.js Dev Tools" [ref=e71] [cursor=pointer]:
+    - img [ref=e72]
+  - alert [ref=e75]: devblog

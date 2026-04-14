@@ -1,0 +1,84 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "devblog" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e5]:
+        - link "Главная" [ref=e6] [cursor=pointer]:
+          - /url: /
+        - link "Блог" [ref=e7] [cursor=pointer]:
+          - /url: /blog
+        - button "Toggle theme" [ref=e8]:
+          - img [ref=e9]
+  - main [ref=e15]:
+    - generic [ref=e16]:
+      - navigation [ref=e17]:
+        - generic [ref=e18]:
+          - generic [ref=e19]:
+            - link "Кабинет автора" [ref=e20] [cursor=pointer]:
+              - /url: /author
+            - generic [ref=e21]:
+              - link "Мои статьи" [ref=e22] [cursor=pointer]:
+                - /url: /author/articles
+              - link "Профиль" [ref=e23] [cursor=pointer]:
+                - /url: /author/profile
+              - link "Уведомления 1" [ref=e50] [cursor=pointer]:
+                - /url: /author/notifications
+                - text: Уведомления
+                - generic [ref=e51]: "1"
+              - link "Сайт →" [ref=e25] [cursor=pointer]:
+                - /url: /
+          - button "Выйти" [ref=e27]
+      - main [ref=e28]:
+        - generic [ref=e59]:
+          - generic [ref=e60]:
+            - heading "Мои статьи" [level=1] [ref=e61]
+            - link "Новая статья" [ref=e62] [cursor=pointer]:
+              - /url: /author/articles/new
+          - table [ref=e64]:
+            - rowgroup [ref=e65]:
+              - row "Заголовок Статус Обновлено Действия" [ref=e66]:
+                - columnheader "Заголовок" [ref=e67]
+                - columnheader "Статус" [ref=e68]
+                - columnheader "Обновлено" [ref=e69]
+                - columnheader "Действия" [ref=e70]
+            - rowgroup [ref=e71]:
+              - row "[TEST-RUN] Article autora2 Черновик 14.04.2026 Редактировать История Ревью" [ref=e72]:
+                - cell "[TEST-RUN] Article autora2" [ref=e73]:
+                  - link "[TEST-RUN] Article autora2" [ref=e74] [cursor=pointer]:
+                    - /url: /author/articles/01KP57D0CCCEFJCBFV1775CSWF
+                - cell "Черновик" [ref=e75]:
+                  - generic [ref=e76]: Черновик
+                - cell "14.04.2026" [ref=e77]
+                - cell "Редактировать История Ревью" [ref=e78]:
+                  - generic [ref=e79]:
+                    - link "Редактировать" [ref=e80] [cursor=pointer]:
+                      - /url: /author/articles/01KP57D0CCCEFJCBFV1775CSWF
+                    - link "История" [ref=e81] [cursor=pointer]:
+                      - /url: /author/articles/01KP57D0CCCEFJCBFV1775CSWF/history
+                    - link "Ревью" [ref=e82] [cursor=pointer]:
+                      - /url: /author/articles/01KP57D0CCCEFJCBFV1775CSWF/review
+              - row "[TEST-RUN] Smoke Test Article Черновик 13.04.2026 Редактировать История Ревью" [ref=e83]:
+                - cell "[TEST-RUN] Smoke Test Article" [ref=e84]:
+                  - link "[TEST-RUN] Smoke Test Article" [ref=e85] [cursor=pointer]:
+                    - /url: /author/articles/01KP40KBZ5HM75EQM7X6R2VAZN
+                - cell "Черновик" [ref=e86]:
+                  - generic [ref=e87]: Черновик
+                - cell "13.04.2026" [ref=e88]
+                - cell "Редактировать История Ревью" [ref=e89]:
+                  - generic [ref=e90]:
+                    - link "Редактировать" [ref=e91] [cursor=pointer]:
+                      - /url: /author/articles/01KP40KBZ5HM75EQM7X6R2VAZN
+                    - link "История" [ref=e92] [cursor=pointer]:
+                      - /url: /author/articles/01KP40KBZ5HM75EQM7X6R2VAZN/history
+                    - link "Ревью" [ref=e93] [cursor=pointer]:
+                      - /url: /author/articles/01KP40KBZ5HM75EQM7X6R2VAZN/review
+  - contentinfo [ref=e33]:
+    - generic [ref=e34]:
+      - paragraph [ref=e35]: © 2026 devblog
+      - link "RSS-фид" [ref=e36] [cursor=pointer]:
+        - /url: /feed.xml
+        - img [ref=e37]
+  - button "Open Next.js Dev Tools" [ref=e45] [cursor=pointer]:
+    - img [ref=e46]
+  - alert [ref=e49]

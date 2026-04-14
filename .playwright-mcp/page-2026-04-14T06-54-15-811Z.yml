@@ -1,0 +1,54 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "devblog" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e5]:
+        - link "Главная" [ref=e6] [cursor=pointer]:
+          - /url: /
+        - link "Блог" [ref=e7] [cursor=pointer]:
+          - /url: /blog
+        - button "Toggle theme" [ref=e8]:
+          - img [ref=e9]
+  - main [ref=e15]:
+    - generic [ref=e45]:
+      - navigation [ref=e46]:
+        - generic [ref=e47]:
+          - generic [ref=e48]:
+            - link "Ревью" [ref=e49] [cursor=pointer]:
+              - /url: /reviewer
+            - generic [ref=e50]:
+              - link "Назначения" [ref=e51] [cursor=pointer]:
+                - /url: /reviewer/assignments
+              - link "Уведомления 2" [ref=e52] [cursor=pointer]:
+                - /url: /reviewer/notifications
+                - text: Уведомления
+                - generic [ref=e53]: "2"
+          - button "Выйти" [ref=e55]
+      - main [ref=e56]:
+        - generic [ref=e57]:
+          - generic [ref=e58]:
+            - heading "Панель ревьера" [level=1] [ref=e59]
+            - paragraph [ref=e60]: Ваши назначения на проверку статей
+          - generic [ref=e61]:
+            - link "0 Ожидают" [ref=e62] [cursor=pointer]:
+              - /url: /reviewer/assignments?status=pending
+              - generic [ref=e63]: "0"
+              - generic [ref=e64]: Ожидают
+            - link "0 В работе" [ref=e65] [cursor=pointer]:
+              - /url: /reviewer/assignments?status=accepted
+              - generic [ref=e66]: "0"
+              - generic [ref=e67]: В работе
+            - link "1 Завершено" [ref=e68] [cursor=pointer]:
+              - /url: /reviewer/assignments?status=completed
+              - generic [ref=e69]: "1"
+              - generic [ref=e70]: Завершено
+  - contentinfo [ref=e28]:
+    - generic [ref=e29]:
+      - paragraph [ref=e30]: © 2026 devblog
+      - link "RSS-фид" [ref=e31] [cursor=pointer]:
+        - /url: /feed.xml
+        - img [ref=e32]
+  - button "Open Next.js Dev Tools" [ref=e40] [cursor=pointer]:
+    - img [ref=e41]
+  - alert [ref=e44]

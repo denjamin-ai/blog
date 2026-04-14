@@ -1,0 +1,70 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "devblog" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e5]:
+        - link "Главная" [ref=e6] [cursor=pointer]:
+          - /url: /
+        - link "Блог" [ref=e7] [cursor=pointer]:
+          - /url: /blog
+        - button "Toggle theme" [ref=e8]:
+          - img [ref=e9]
+  - main [ref=e15]:
+    - generic [ref=e46]:
+      - navigation [ref=e47]:
+        - generic [ref=e48]:
+          - generic [ref=e49]:
+            - link "Кабинет автора" [ref=e50] [cursor=pointer]:
+              - /url: /author
+            - generic [ref=e51]:
+              - link "Мои статьи" [ref=e52] [cursor=pointer]:
+                - /url: /author/articles
+              - link "Профиль" [ref=e53] [cursor=pointer]:
+                - /url: /author/profile
+              - link "Уведомления 1" [ref=e54] [cursor=pointer]:
+                - /url: /author/notifications
+                - text: Уведомления
+                - generic [ref=e55]: "1"
+              - link "Сайт →" [ref=e56] [cursor=pointer]:
+                - /url: /
+          - button "Выйти" [ref=e58]
+      - main [ref=e59]:
+        - generic [ref=e60]:
+          - generic [ref=e61]:
+            - heading "Обзор" [level=1] [ref=e62]
+            - link "Написать статью" [ref=e63] [cursor=pointer]:
+              - /url: /author/articles/new
+          - generic [ref=e64]:
+            - generic [ref=e65]:
+              - generic [ref=e66]: "2"
+              - generic [ref=e67]: Всего статей
+            - generic [ref=e68]:
+              - generic [ref=e69]: "0"
+              - generic [ref=e70]: Опубликовано
+            - generic [ref=e71]:
+              - generic [ref=e72]: "2"
+              - generic [ref=e73]: Черновиков
+            - generic [ref=e74]:
+              - generic [ref=e75]: "0"
+              - generic [ref=e76]: Просмотров
+            - generic [ref=e77]:
+              - generic [ref=e78]: "0"
+              - generic [ref=e79]: Закладок
+            - generic [ref=e80]:
+              - generic [ref=e81]: "0"
+              - generic [ref=e82]: Средний рейтинг
+          - generic [ref=e83]:
+            - link "Все мои статьи →" [ref=e84] [cursor=pointer]:
+              - /url: /author/articles
+            - link "Уведомления →" [ref=e85] [cursor=pointer]:
+              - /url: /author/notifications
+  - contentinfo [ref=e28]:
+    - generic [ref=e29]:
+      - paragraph [ref=e30]: © 2026 devblog
+      - link "RSS-фид" [ref=e31] [cursor=pointer]:
+        - /url: /feed.xml
+        - img [ref=e32]
+  - button "Open Next.js Dev Tools" [ref=e40] [cursor=pointer]:
+    - img [ref=e41]
+  - alert [ref=e44]

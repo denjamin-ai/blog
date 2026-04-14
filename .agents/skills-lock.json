@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "qa-test-planner": {
+      "source": "softaworks/agent-toolkit",
+      "sourceType": "github",
+      "computedHash": "c7a27e535b0a21a9ed22578ca0e37a00a00f43b775efe791a2d4be849ce8ffa9"
+    }
+  }
+}

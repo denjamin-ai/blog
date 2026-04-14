@@ -1,0 +1,73 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "devblog" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e5]:
+        - link "Главная" [ref=e6] [cursor=pointer]:
+          - /url: /
+        - link "Блог" [ref=e7] [cursor=pointer]:
+          - /url: /blog
+        - button "Toggle theme" [ref=e8]:
+          - img [ref=e9]
+  - main [ref=e11]:
+    - generic [ref=e12]:
+      - heading "Блог" [level=1] [ref=e13]
+      - generic [ref=e14]:
+        - 'link "Drizzle ORM: быстрый старт с SQLite Настройка Drizzle ORM с SQLite: схема, миграции и типобезопасные запросы. 13 апреля 2026 г. 2 мин чтения drizzle sqlite orm" [ref=e15] [cursor=pointer]':
+          - /url: /blog/drizzle-orm-intro
+          - generic [ref=e16]:
+            - 'heading "Drizzle ORM: быстрый старт с SQLite" [level=3] [ref=e17]'
+            - paragraph [ref=e18]: "Настройка Drizzle ORM с SQLite: схема, миграции и типобезопасные запросы."
+            - generic [ref=e19]:
+              - generic [ref=e20]: 13 апреля 2026 г.
+              - generic [ref=e21]: 2 мин чтения
+              - generic [ref=e22]:
+                - generic [ref=e23]: drizzle
+                - generic [ref=e24]: sqlite
+                - generic [ref=e25]: orm
+        - 'link "Интерактивные MDX-компоненты: раскрывающийся контент Обзор кастомных MDX-компонентов блога: Expandable для скрытого контента. 13 апреля 2026 г. 2 мин чтения mdx компоненты интерактивность" [ref=e26] [cursor=pointer]':
+          - /url: /blog/mdx-interactive-components
+          - generic [ref=e27]:
+            - 'heading "Интерактивные MDX-компоненты: раскрывающийся контент" [level=3] [ref=e28]'
+            - paragraph [ref=e29]: "Обзор кастомных MDX-компонентов блога: Expandable для скрытого контента."
+            - generic [ref=e30]:
+              - generic [ref=e31]: 13 апреля 2026 г.
+              - generic [ref=e32]: 2 мин чтения
+              - generic [ref=e33]:
+                - generic [ref=e34]: mdx
+                - generic [ref=e35]: компоненты
+                - generic [ref=e36]: интерактивность
+        - 'link "Next.js App Router: практическое руководство Разбираем App Router в Next.js: Server Components, Client Components, layouts и вложенная маршрутизация. 13 апреля 2026 г. 2 мин чтения 1 просмотров next.js react app-router" [ref=e37] [cursor=pointer]':
+          - /url: /blog/intro-nextjs-app-router
+          - generic [ref=e38]:
+            - 'heading "Next.js App Router: практическое руководство" [level=3] [ref=e39]'
+            - paragraph [ref=e40]: "Разбираем App Router в Next.js: Server Components, Client Components, layouts и вложенная маршрутизация."
+            - generic [ref=e41]:
+              - generic [ref=e42]: 13 апреля 2026 г.
+              - generic [ref=e43]: 2 мин чтения
+              - generic [ref=e44]: 1 просмотров
+              - generic [ref=e45]:
+                - generic [ref=e46]: next.js
+                - generic [ref=e47]: react
+                - generic [ref=e48]: app-router
+        - 'link "Полезные utility-типы в TypeScript Обзор встроенных utility-типов: Pick, Omit, Partial, Required, Record и когда их применять. 12 апреля 2026 г. 3 мин чтения typescript типы" [ref=e49] [cursor=pointer]':
+          - /url: /blog/typescript-utility-types
+          - generic [ref=e50]:
+            - heading "Полезные utility-типы в TypeScript" [level=3] [ref=e51]
+            - paragraph [ref=e52]: "Обзор встроенных utility-типов: Pick, Omit, Partial, Required, Record и когда их применять."
+            - generic [ref=e53]:
+              - generic [ref=e54]: 12 апреля 2026 г.
+              - generic [ref=e55]: 3 мин чтения
+              - generic [ref=e56]:
+                - generic [ref=e57]: typescript
+                - generic [ref=e58]: типы
+  - contentinfo [ref=e59]:
+    - generic [ref=e60]:
+      - paragraph [ref=e61]: © 2026 devblog
+      - link "RSS-фид" [ref=e62] [cursor=pointer]:
+        - /url: /feed.xml
+        - img [ref=e63]
+  - button "Open Next.js Dev Tools" [ref=e71] [cursor=pointer]:
+    - img [ref=e72]
+  - alert [ref=e75]

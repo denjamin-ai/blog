@@ -189,3 +189,84 @@ body {
 .copy-button.copied {
   color: #22c55e;
 }
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .animate-fade-in {
+    animation: fade-in 0.15s ease-out both;
+  }
+}
+
+/* Dialog centering — Tailwind v4 preflight resets margin to 0, overriding browser default */
+dialog {
+  margin: auto;
+}
+
+@keyframes dialog-in {
+  from { opacity: 0; transform: scale(0.95) translateY(-6px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .animate-dialog-in {
+    animation: dialog-in 0.15s ease-out both;
+  }
+}
+
+/* Share buttons */
+.share-btn {
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  background: var(--muted);
+  color: var(--muted-foreground);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: color 0.15s, opacity 0.15s;
+}
+
+.share-btn:hover:not(:disabled) {
+  color: var(--foreground);
+}
+
+.share-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+@media print {
+  nav,
+  footer,
+  aside[data-toc],
+  .share-btn,
+  [data-toc],
+  .theme-toggle,
+  .notification-badge,
+  details {
+    display: none !important;
+  }
+
+  body {
+    background: white;
+    color: black;
+  }
+
+  .prose {
+    max-width: 100%;
+  }
+
+  .prose pre {
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow: visible;
+    border: 1px solid #ccc;
+  }
+
+  @page {
+    margin: 2cm;
+  }
+}

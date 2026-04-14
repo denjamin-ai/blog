@@ -1,0 +1,60 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "devblog" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e5]:
+        - link "Главная" [ref=e6] [cursor=pointer]:
+          - /url: /
+        - link "Блог" [ref=e7] [cursor=pointer]:
+          - /url: /blog
+        - button "Toggle theme" [ref=e8]:
+          - img [ref=e9]
+  - main [ref=e15]:
+    - generic [ref=e16]:
+      - navigation [ref=e17]:
+        - generic [ref=e18]:
+          - generic [ref=e19]:
+            - link "Админка" [ref=e20] [cursor=pointer]:
+              - /url: /admin
+            - generic [ref=e21]:
+              - link "Статьи" [ref=e22] [cursor=pointer]:
+                - /url: /admin/articles
+              - link "Пользователи" [ref=e23] [cursor=pointer]:
+                - /url: /admin/users
+              - link "Уведомления" [ref=e24] [cursor=pointer]:
+                - /url: /admin/notifications
+              - link "Настройки" [ref=e25] [cursor=pointer]:
+                - /url: /admin/settings
+              - link "Сайт →" [ref=e26] [cursor=pointer]:
+                - /url: /
+          - button "Выйти" [ref=e28]
+      - main [ref=e29]:
+        - generic [ref=e30]:
+          - link "← Назад к статье" [ref=e32] [cursor=pointer]:
+            - /url: /admin/articles/01KP40KBZ5HM75EQM7X6R2VAZN
+          - heading "Ревью" [level=1] [ref=e33]
+          - paragraph [ref=e34]: "[TEST-RUN] Smoke Test Article"
+          - generic [ref=e36]:
+            - generic [ref=e37]:
+              - generic [ref=e38]:
+                - generic [ref=e39]: Тестовый ревьер
+                - generic [ref=e40]: Ожидает
+                - generic [ref=e41]: 14.04.2026
+              - generic [ref=e42]:
+                - button "Обновить" [ref=e43]
+                - button "Показать изменения" [ref=e44]
+                - button "Закрыть ревью" [ref=e45]
+            - paragraph [ref=e48]: Загрузка комментариев...
+            - generic [ref=e49]:
+              - textbox "Напишите ответ..." [ref=e50]
+              - button "Отправить" [disabled] [ref=e52]
+  - contentinfo [ref=e53]:
+    - generic [ref=e54]:
+      - paragraph [ref=e55]: © 2026 devblog
+      - link "RSS-фид" [ref=e56] [cursor=pointer]:
+        - /url: /feed.xml
+        - img [ref=e57]
+  - button "Open Next.js Dev Tools" [ref=e65] [cursor=pointer]:
+    - img [ref=e66]
+  - alert [ref=e69]
