@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const rl = checkRateLimit(request);
+  const rl = checkRateLimit(request, "admin-login");
   if (rl.blocked) {
     return NextResponse.json(
       { error: "Слишком много попыток. Попробуйте через 15 минут." },
@@ -49,9 +49,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Неверный пароль" }, { status: 400 });
   }
 
-  const hash = process.env.ADMIN_PASSWORD_HASH;
+  // ADMIN_PASSWORD_HASH_B64 — bcrypt-хеш в base64 (стабильно с dotenv-expand).
+  // Fallback: ADMIN_PASSWORD_HASH для обратной совместимости (если задан напрямую).
+  const hashB64 = process.env.ADMIN_PASSWORD_HASH_B64;
+  const hash = hashB64
+    ? Buffer.from(hashB64, "base64").toString("utf-8")
+    : process.env.ADMIN_PASSWORD_HASH;
   if (!hash) {
-    console.error("ADMIN_PASSWORD_HASH is not configured");
+    console.error(
+      "ADMIN_PASSWORD_HASH_B64 (or ADMIN_PASSWORD_HASH) is not configured",
+    );
     return NextResponse.json({ error: "Ошибка сервера" }, { status: 500 });
   }
 

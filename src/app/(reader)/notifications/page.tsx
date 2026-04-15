@@ -47,10 +47,25 @@ export default async function ReaderNotificationsPage() {
       </div>
 
       {items.length === 0 ? (
-        <p className="text-muted-foreground">
-          Нет уведомлений. Подпишитесь на авторов, чтобы получать уведомления о
-          новых статьях.
-        </p>
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <svg
+            viewBox="0 0 24 24"
+            className="w-12 h-12 text-muted-foreground/40 mb-4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+          </svg>
+          <p className="text-muted-foreground">
+            Нет уведомлений. Подпишитесь на авторов, чтобы получать уведомления
+            о новых статьях.
+          </p>
+        </div>
       ) : (
         <div className="flex flex-col gap-3">
           {items.map((n) => {

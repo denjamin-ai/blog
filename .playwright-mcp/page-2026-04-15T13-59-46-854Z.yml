@@ -1,0 +1,67 @@
+- generic [active] [ref=e1]:
+  - link "Перейти к содержимому" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - navigation [ref=e3]:
+    - generic [ref=e4]:
+      - link "devblog" [ref=e5] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e6]:
+        - link "Блог" [ref=e7] [cursor=pointer]:
+          - /url: /blog
+        - button "Переключить на светлую тему" [ref=e8]:
+          - img [ref=e9]
+        - link "Кабинет автора" [ref=e15] [cursor=pointer]:
+          - /url: /author
+        - button "Выйти" [ref=e17]
+  - main [ref=e18]:
+    - generic [ref=e19]:
+      - navigation [ref=e20]:
+        - generic [ref=e21]:
+          - generic [ref=e22]:
+            - link "Кабинет автора" [ref=e23] [cursor=pointer]:
+              - /url: /author
+            - generic [ref=e24]:
+              - link "Мои статьи" [ref=e25] [cursor=pointer]:
+                - /url: /author/articles
+              - link "Профиль" [ref=e26] [cursor=pointer]:
+                - /url: /author/profile
+              - link "Уведомления" [ref=e27] [cursor=pointer]:
+                - /url: /author/notifications
+              - link "Сайт →" [ref=e28] [cursor=pointer]:
+                - /url: /
+          - button "Выйти" [ref=e30]
+      - main [ref=e31]:
+        - generic [ref=e32]:
+          - heading "Новая статья" [level=1] [ref=e33]
+          - generic [ref=e34]:
+            - generic [ref=e35]:
+              - generic [ref=e36]: Заголовок
+              - textbox "Заголовок статьи" [ref=e37]
+            - generic [ref=e38]:
+              - generic [ref=e39]: Slug
+              - textbox "url-slug" [ref=e40]
+            - generic [ref=e41]:
+              - generic [ref=e42]: Описание
+              - textbox "Краткое описание для карточки" [ref=e43]
+            - generic [ref=e44]:
+              - generic [ref=e45]: Теги (через запятую)
+              - textbox "react, typescript, nextjs" [ref=e46]
+            - generic [ref=e47]:
+              - generic [ref=e48]: Контент (MDX)
+              - textbox "# Заголовок Текст статьи в формате MDX..." [ref=e49]:
+                - /placeholder: "# Заголовок  Текст статьи в формате MDX..."
+            - generic [ref=e50]:
+              - button "Сохранить черновик" [disabled] [ref=e51]
+              - button "Опубликовать" [disabled] [ref=e52]
+  - contentinfo [ref=e53]:
+    - generic [ref=e54]:
+      - paragraph [ref=e55]: © 2026 Denjamin
+      - generic [ref=e56]:
+        - link "GitHub" [ref=e57] [cursor=pointer]:
+          - /url: https://github.com/denjamin
+        - link "RSS-фид" [ref=e58] [cursor=pointer]:
+          - /url: /feed.xml
+          - img [ref=e59]
+  - button "Open Next.js Dev Tools" [ref=e67] [cursor=pointer]:
+    - img [ref=e68]
+  - alert [ref=e71]

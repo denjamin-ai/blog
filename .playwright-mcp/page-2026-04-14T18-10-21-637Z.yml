@@ -1,0 +1,79 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "devblog" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e5]:
+        - link "Главная" [ref=e6] [cursor=pointer]:
+          - /url: /
+        - link "Блог" [ref=e7] [cursor=pointer]:
+          - /url: /blog
+        - button "Toggle theme" [ref=e8]:
+          - img [ref=e9]
+  - main [ref=e11]:
+    - generic [ref=e12]:
+      - navigation [ref=e13]:
+        - generic [ref=e14]:
+          - generic [ref=e15]:
+            - link "Админка" [ref=e16] [cursor=pointer]:
+              - /url: /admin
+            - generic [ref=e17]:
+              - link "Статьи" [ref=e18] [cursor=pointer]:
+                - /url: /admin/articles
+              - link "Пользователи" [ref=e19] [cursor=pointer]:
+                - /url: /admin/users
+              - link "Уведомления" [ref=e20] [cursor=pointer]:
+                - /url: /admin/notifications
+              - link "Настройки" [ref=e21] [cursor=pointer]:
+                - /url: /admin/settings
+              - link "Сайт →" [ref=e22] [cursor=pointer]:
+                - /url: /
+          - button "Выйти" [ref=e24]
+      - main [ref=e25]:
+        - generic [ref=e66]:
+          - generic [ref=e67]:
+            - generic [ref=e68]:
+              - generic [ref=e69]:
+                - textbox [ref=e70]: Test Article for Save
+                - button "Сохранить" [ref=e71]
+              - paragraph [ref=e72]:
+                - text: "Автор:"
+                - emphasis [ref=e73]: Администратор
+                - text: "· Обновлено: 14.04.2026"
+            - link "История" [ref=e75] [cursor=pointer]:
+              - /url: /admin/articles/01KP6JZMFPGH5E7HV7STE9HRCY/history
+          - generic [ref=e76]:
+            - generic [ref=e77]:
+              - generic [ref=e78]: "Статус:"
+              - generic [ref=e79]: Черновик
+            - generic [ref=e80]:
+              - button "Опубликовать" [ref=e81]
+              - button "Запланировать" [ref=e82]
+              - button "На ревью" [ref=e83]
+              - button "Удалить" [ref=e84]
+          - generic [ref=e85]:
+            - heading "Журнал изменений" [level=2] [ref=e86]
+            - generic [ref=e87]:
+              - generic [ref=e88]:
+                - generic [ref=e89]:
+                  - generic [ref=e90]: Дата
+                  - textbox [ref=e91]
+                - generic [ref=e92]:
+                  - generic [ref=e93]: Раздел (опционально)
+                  - textbox "Введение" [ref=e94]
+              - generic [ref=e95]:
+                - generic [ref=e96]: Описание
+                - textbox "Что изменилось?" [ref=e97]
+              - button "+ Добавить запись" [disabled] [ref=e98]
+          - generic [ref=e99]:
+            - heading "Публичные комментарии" [level=2] [ref=e100]
+            - paragraph [ref=e101]: Комментариев пока нет.
+  - contentinfo [ref=e49]:
+    - generic [ref=e50]:
+      - paragraph [ref=e51]: © 2026 devblog
+      - link "RSS-фид" [ref=e52] [cursor=pointer]:
+        - /url: /feed.xml
+        - img [ref=e53]
+  - button "Open Next.js Dev Tools" [ref=e61] [cursor=pointer]:
+    - img [ref=e62]
+  - alert [ref=e65]

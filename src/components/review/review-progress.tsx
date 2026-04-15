@@ -15,7 +15,7 @@ export function ReviewProgress({ resolved, total }: Props) {
     <div className="space-y-1">
       <div className="flex items-center justify-between">
         <span
-          className={`text-xs font-medium ${allDone ? "text-green-600 dark:text-green-400" : "text-foreground"}`}
+          className={`text-xs font-medium ${allDone ? "text-success" : "text-foreground"}`}
         >
           {allDone
             ? "Все замечания решены"
@@ -25,7 +25,7 @@ export function ReviewProgress({ resolved, total }: Props) {
       </div>
       <div className="h-1.5 rounded-full bg-muted overflow-hidden">
         <div
-          className={`h-full rounded-full transition-all ${allDone ? "bg-green-500" : "bg-accent"}`}
+          className={`h-full rounded-full transition-all ${allDone ? "bg-success" : "bg-accent"}`}
           style={{ width: `${pct}%` }}
         />
       </div>

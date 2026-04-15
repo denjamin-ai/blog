@@ -107,11 +107,11 @@ export default async function AuthorArticlePreviewPage({
           )}
 
           {mdxError ? (
-            <div className="p-4 rounded-lg bg-red-50 border border-red-200 dark:bg-red-900/20 dark:border-red-800">
-              <p className="text-sm font-medium text-red-600 dark:text-red-400 mb-1">
+            <div className="p-4 rounded-lg bg-danger-bg border border-danger-border">
+              <p className="text-sm font-medium text-danger mb-1">
                 Ошибка компиляции MDX:
               </p>
-              <pre className="text-xs text-red-500 whitespace-pre-wrap">
+              <pre className="text-xs text-danger whitespace-pre-wrap">
                 {mdxError}
               </pre>
             </div>

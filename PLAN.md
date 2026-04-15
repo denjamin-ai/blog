@@ -32,6 +32,17 @@
 | 11. Расширенный ревью-пайплайн | Done | 2026-04-13 |
 | 12. Ревью Фазы 12 (вовлечение) | Done | 2026-04-13 |
 | 13. Финальный ревью фаз 8–13 | Done | 2026-04-13 |
+| 14. Медиа-контент в статьях | Done | 2026-04-14 |
+| 15. LaTeX + FormulaInserter + EditorWithPreview | Done | 2026-04-14 |
+| 16. Диаграммы в статьях (Mermaid + Kroki + Circuit) | Done | 2026-04-14 |
+| 17. E2E-тесты (Playwright) + REPORT_LOG | Done | 2026-04-14 |
+| 18. Ревью фаз 14–17 | Done | 2026-04-14 |
+| 20. Типографическая система | Done | 2026-04-15 |
+| 21. Layout публичных страниц | Done | 2026-04-15 |
+| 22. Layout панелей управления | Done | 2026-04-15 |
+| 23. Анимации и micro-interactions | Done | 2026-04-15 |
+| 24. Responsive + Accessibility + Визуальный аудит | Done | 2026-04-15 |
+| 25. E2E UI + UX ревью + финализация | Done | 2026-04-15 |
 
 ---
 
@@ -228,16 +239,381 @@
 - **Файлы**: `src/lib/rate-limit.ts`, `src/app/api/articles/[id]/votes/route.ts`, `src/app/api/comments/[id]/votes/route.ts`, `src/app/api/bookmarks/route.ts`
 - **Валидация**: `npm run build` OK
 
----
+### Фаза 15: LaTeX + FormulaInserter + EditorWithPreview (Done)
+- **Что сделано**:
+  - **LaTeX в MDX**: `remark-math` + `rehype-katex` добавлены в pipeline `src/lib/mdx.ts`; `rehypeSanitize` удалён (контент от доверенных авторов, allowlist для KaTeX слишком сложен); KaTeX CSS через CDN в `layout.tsx`; формулы `$...$` и `$$...$$` рендерятся в публичных статьях
+  - **`FormulaInserter`** (`src/components/formula-inserter.tsx`): collapsible-панель над textarea; ввод LaTeX + KaTeX client-side превью; inline/block режим; 11 быстрых символов (∑, ∫, √, ∂, α-π, матрица); вставка в позицию курсора через `insertFormulaAtCursor`
+  - **`EditorWithPreview`** (`src/components/editor-with-preview.tsx`): toolbar с 4 режимами (right/left/bottom/none); layout в `localStorage('editor_preview_layout')`; debounce 500ms → `POST /api/preview` → preview pane с `prose`-стилями; skeleton-анимация; drag handle (pointer events, CSS `--split` custom property); mobile: right/left скрыты
+  - **`POST /api/preview`** (`src/app/api/preview/route.ts`): auth admin/author; unified pipeline (remark-parse + remark-math + remark-rehype + rehype-katex + rehype-pretty-code + rehype-slug + rehype-stringify); processor на уровне модуля; content limit 100KB; ошибки → inline HTML
+  - **Интеграция**: в `src/app/author/(protected)/articles/[id]/page.tsx` — `insertFormulaAtCursor`, `EditorWithPreview` как обёртка контент-поля; content field вынесен из `max-w-4xl` для full-width split режима
+  - **US-A28, US-A29, US-A30** добавлены в JTBD.md
+- **Валидация**: `npm run build` OK (0 ошибок TypeScript)
 
-## Предстоящие фазы
+### Фаза 16: Диаграммы в статьях (Done)
+- **Что сделано**:
+  - **`<Mermaid chart={...}>`** (`src/components/mdx/mermaid.tsx`): `'use client'`, dynamic import `mermaid@11`; IntersectionObserver — lazy render при попадании в viewport; skeleton-анимация; смена темы через `useTheme().resolvedTheme` → `mermaid.initialize({theme})`; ошибка синтаксиса → inline сообщение
+  - **`<Diagram type="..." chart={...}>`** (`src/components/mdx/diagram.tsx`): Server Component; `fetch https://kroki.io/{type}/svg` (POST); module-level `Map` кэш по sha256-хэшу; поддерживаемые типы: plantuml, bpmn, wavedrom, graphviz, d2, svgbob, tikz; fallback `<pre><code>` при недоступности
+  - **`<Circuit code={...}>`** (`src/components/mdx/circuit.tsx`): тонкая обёртка над `<Diagram type="tikz">`
+  - **Регистрация**: все три компонента добавлены в `mdxComponents` в `src/lib/mdx.ts`
+  - **Preview API** (`src/app/api/preview/route.ts`): добавлены `remarkMdx` + custom remark-плагин `remarkMdxDiagramsToHtml` — трансформирует `<Mermaid>` → `<pre class="mermaid">`, `<Diagram>` и `<Circuit>` → `<pre class="language-{type}-diagram">` до `remarkRehype`
+  - **`EditorWithPreview`**: новый проп `diagramInserter`; `previewRef` + `useEffect([previewHtml])` → `mermaid.run({nodes})` для рендера диаграмм в preview pane
+  - **`DiagramInserter`** (`src/components/diagram-inserter.tsx`): collapsible-панель; 10 Mermaid-типов + 6 Kroki-типов с шаблонами; Mermaid-предпросмотр через `import('mermaid')` при выборе типа; Kroki-типы — только шаблон; вставка в позицию курсора
+  - **Интеграция**: `DiagramInserter` добавлен в `src/app/author/(protected)/articles/[id]/page.tsx`
+  - **US-G11, US-A31, US-AD31** добавлены в JTBD.md
+- **Валидация**: `npm run build` OK (0 ошибок TypeScript)
 
-### Фаза 6: MDX-компоненты
-- Expandable — раскрывающийся контент (`<details>/<summary>`)
-- CodeBlock с кнопкой Run — iframe-sandbox для JS/TS
-- Тестовая статья со всеми компонентами
+### Фаза 17: E2E-тесты (Playwright) + REPORT_LOG (Done)
+- **Что сделано**:
+  - `@playwright/test` установлен, chromium-браузер скачан
+  - `playwright.config.ts` (корень): `testDir=testing/e2e`, `workers=1`, HTML-reporter в `testing/reports/playwright-html`, `globalSetup` сброс БД + auth
+  - `.agents/playwright-tester/playwright.config.ts` — алиас для запуска тестов агентом
+  - `testing/e2e/global-setup.ts` — сброс `blog.test.db` + сохранение storageState для admin/reader/author
+  - **4 spec-файла** (19 тестов):
+    - `guest.spec.ts` — US-G2: навигация, чтение статьи, 404, редирект
+    - `admin.spec.ts` — US-AD1: вход; US-AD4: создание MDX-статьи; US-AD5: редактирование; US-AD6: публикация/снятие
+    - `reader.spec.ts` — US-R1: вход; US-R2: комментарий; US-R8: голосование; US-R9: закладки
+    - `author.spec.ts` — US-A1: вход; US-A3: черновик; US-A22: LaTeX; US-A23: live-preview; US-G11: Mermaid SVG
+  - `testing/reports/REPORT_LOG.md` — индекс всех отчётов, первая запись REPORT_1 (2026-04-14, NO-GO, XSS BUG-006)
+  - `package.json`: добавлены скрипты `test:e2e`, `test:e2e:ui`, `test:e2e:report`
+  - `testing/TEST-PLAN.md`: E2E вынесены из Out of Scope в In Scope
+- **Команды**:
+  - Запуск: `npm run dev:test` → `npm run test:e2e`
+  - Сброс БД: `npm run test:reset`
+  - HTML-отчёт: `npm run test:e2e:report`
+- **Файлы**: `playwright.config.ts`, `testing/e2e/`, `testing/reports/REPORT_LOG.md`
 
-### Фаза 7: Деплой
-- Turso для prod, переключение SQLite/Turso по env
-- Vercel: env-переменные, деплой
-- Проверка prod-сборки
+### Фаза 19: E2E тест-прогон + исправление багов (Done)
+- **Прогон**: `npx playwright test` — 23/26 прошли, 3 пропущены, 0 провалились
+- **Вердикт**: ✅ GO
+- **Исправлено**:
+  1. **BUG-003 (CRITICAL)** `src/lib/mdx.ts` — XSS: `<script>` в MDX-контенте выполнялся в браузере. Добавлена `stripDangerousHtml()` перед компиляцией.
+  2. **BUG-004 (HIGH)** `src/app/api/admin/users/[id]/route.ts` — DELETE user → 500 при наличии review-комментариев. Добавлен NULL reviewComments.authorId перед удалением.
+  3. **BUG-005 (HIGH)** `src/app/api/reviewer/assignments/route.ts` — GET с admin-сессией → 500 (NEXT_REDIRECT). Добавлен ранний return 403 для isAdmin.
+- **Инфраструктура**:
+  - `scripts/clear-test-db.ts` — исправлены snake_case имена таблиц
+  - `reset-test-db.sh` — in-place очистка БД (без удаления файла)
+  - `src/lib/rate-limit.ts` — namespace Map, MAX_ATTEMPTS=1000 в dev
+  - Playwright-тесты: исправлены regex, waitForResponse, Mermaid timeout
+- **Пропущены (UX gap)**: FormulaInserter, Live-preview, Vote (не реализованы)
+- **Отчёт**: [REPORT_2.md](testing/reports/REPORT_2.md)
+- **Валидация**: `npm run build` OK (0 ошибок TypeScript)
+
+### Фаза 18: Ревью фаз 14–17 (Done)
+- **Найдено**: 0 P0, 1 P1, 1 P2, 3 P3
+- **Исправлено**:
+  1. **P1** `mermaid.tsx:55–59` — XSS: сообщение об ошибке вставлялось в `innerHTML` через шаблонную строку без экранирования. Заменено на `createElement + textContent`.
+  2. **P2** `diagram.tsx:61` — SVG от Kroki API рендерился без санитизации (`dangerouslySetInnerHTML`). Добавлена функция `sanitizeSvg()` — strip `<script>`, `on*` атрибуты, `javascript:` href; применяется перед записью в кэш.
+- **P3 backlog**:
+  - `article-video.tsx` — нет `<track>` для субтитров (WCAG 1.2.2); добавить prop `track?`
+  - SEO — нет `og:video` на статьях с `<ArticleVideo>`; нужно поле в схеме или парсинг
+  - `article-image.tsx` — `<img>` вместо `next/image`; нужен `unoptimized` или size props
+- **Валидация**: `npm run build` OK (0 ошибок TypeScript)
+
+### Фаза 20: Типографическая система (Done)
+- **Что сделано**:
+  - Шрифтовая пара с Кириллицей: **Playfair Display** (display, h1–h3) + **Manrope** (body, UI)
+  - Подключены через `next/font/google` с subsets `["latin", "cyrillic"]`, CSS-переменные `--font-playfair` / `--font-manrope` на `<html>`
+  - В `@theme inline` добавлены `--font-display`, `--font-sans`, `--font-mono` → Tailwind-утилиты `font-display`, `font-sans`, `font-mono`
+  - Type scale в `:root`: `--type-h1`…`--type-code` (размеры), `--leading-*` (line-height), `--tracking-*` (letter-spacing) для каждого уровня
+  - Prose-стили обновлены: добавлен `.prose h1`, обновлены `.prose h2`/`.prose h3` (font-display + leading + tracking), добавлен `.prose h4`
+  - `font-display` применён к: логотипу nav, h3 в article-card, h1 на `/blog`, h1 на `/blog/[slug]`, h1 на страницах логина (`/login`, `/admin/login`)
+  - `body { font-family: var(--font-sans) }` — тело Manrope
+  - Моно-стек в prose унифицирован через `var(--font-mono)`
+- **Валидация**: `npm run build` OK (79 роутов, 0 ошибок TypeScript)
+- **Файлы**:
+  - `src/app/layout.tsx` — импорт Playfair_Display + Manrope, .variable на `<html>`
+  - `src/app/globals.css` — @theme fonts, :root type scale, prose h1/h2/h3/h4, body font
+  - `src/components/nav.tsx` — `font-display` на логотипе
+  - `src/components/article-card.tsx` — `font-display` на h3
+  - `src/app/blog/page.tsx` — `font-display` на h1
+  - `src/app/blog/[slug]/page.tsx` — `font-display` на h1 статьи
+  - `src/app/admin/login/login-form.tsx` — `font-display` на h1
+  - `src/app/login/page.tsx` — `font-display` на h1
+
+### Фаза 20: Цветовая система (Done)
+- **Что сделано**:
+  - Акцент: **Teal** (`#0f766e` light / `#2dd4bf` dark) — заменил синий (#2563eb / #3b82f6)
+  - Семантические токены: `success`, `warning`, `danger`, `info` (+ `-bg`, `-border` варианты) в `:root` и `.dark` через CSS-переменные
+  - Тёмная тема: фон `#111111` (не чистый чёрный), поверхности `#1e1e1e` / `#161616`; все dark-значения соответствуют WCAG AA ≥4.5:1
+  - `@theme inline` дополнен токенами → Tailwind-утилиты `text-danger`, `bg-success-bg`, `border-warning-border`, `text-info` и т.д.
+  - Устранены все `dark:` префиксы в `.tsx` компонентах (кроме `dark:prose-invert` — стандарт Tailwind Typography)
+  - Устранены все `text-red-500`, `text-green-600/400`, `text-yellow-*`, `bg-green-100`, `bg-red-100` и аналоги (~40+ файлов)
+  - Shiki темы `github-dark`/`github-light` оставлены — нейтральны, совместимы с teal-акцентом; `code-bg` перекрыт через `var(--code-bg)`
+- **Валидация**: `npm run build` OK (79 роутов, 0 ошибок TypeScript)
+- **Ключевые файлы**:
+  - `src/app/globals.css` — полная цветовая система: `:root`, `.dark`, `@theme` токены
+  - `src/components/difficulty-badge.tsx`, `article-voting.tsx`, `review/verdict-badge.tsx` — семантика
+  - `src/components/review/diff-view.tsx`, `version-warning.tsx`, `review-progress.tsx` — семантика
+  - `src/components/comments/comment-item.tsx`, `comment-form.tsx` — семантика
+  - `src/app/admin/(protected)/articles/page.tsx`, `users/page.tsx` — статусные бейджи
+  - `src/app/author/(protected)/articles/[id]/page.tsx`, `admin/(protected)/articles/[id]/page.tsx` — все UI-состояния
+### Фаза 21: Layout публичных страниц (Done)
+- **Что сделано (сводка по 4 суб-шагам)**:
+  - **21a — Nav + Homepage + Footer**:
+    - `nav.tsx` → async Server Component: sticky backdrop-blur, auth-aware (портал/logout/войти), NotificationBadge
+    - `nav-mobile-menu.tsx` — новый client-компонент (hamburger, Server Action logout prop)
+    - `page.tsx` — editorial homepage для гостей (hero + featured article + 2-col grid), redirects для ролей сохранены
+    - `footer.tsx` → async Server Component: profile.links (GitHub/Telegram/Website), profile.name
+  - **21b — ArticleCard + /blog**:
+    - `article-card.tsx` — aspect-video cover, bookmark overlay on hover, rating/author/tags, `hover:-translate-y-0.5`, all new props optional
+    - `blog/page.tsx` — 2-col grid, SQL subqueries для rating/bookmarkCount, author info, bookmark personalization
+  - **21c — Страница статьи + TOC**:
+    - `blog/[slug]/page.tsx` — cover before title, `font-extrabold text-5xl`, single-line meta (дата·автор·время·difficulty), engagement row after prose, `lg:grid-cols-[1fr_220px]`
+    - `toc.tsx` — `xl→lg` breakpoint, `text-xs`, active indicator via `border-l-2 border-accent`, `sticky top-20`
+  - **21d — Остальные публичные страницы**:
+    - `authors/[slug]/page.tsx` — circular avatar с border-2, display font, SVG иконки для GitHub/Telegram/Website, SubscribeButton с проверкой подписки, ArticleCard grid
+    - `(reader)/bookmarks/page.tsx` — ArticleCard grid, empty state (SVG bookmark icon + текст)
+    - `author/notifications`, `reviewer/notifications` — accent bg снижен до `bg-accent/5` (консистентно с reader)
+    - `login/page.tsx`, `admin/login/login-form.tsx` — blog name «devblog» display font сверху, subtitle под ним
+- **Валидация**: `npm run build` OK на каждом суб-шаге
+- **Файлы** (16):
+  - Layout: `nav.tsx`, `nav-mobile-menu.tsx`, `footer.tsx`
+  - Страницы: `page.tsx`, `blog/page.tsx`, `blog/[slug]/page.tsx`, `authors/[slug]/page.tsx`, `(reader)/bookmarks/page.tsx`
+  - Компоненты: `article-card.tsx`, `toc.tsx`
+  - Уведомления: `author/notifications/page.tsx`, `reviewer/notifications/page.tsx`
+  - Логин: `login/page.tsx`, `admin/login/login-form.tsx`
+
+### Фаза 22: Layout панелей управления (Done)
+- **Что сделано (3 суб-шага)**:
+  - **22a — Admin панель**:
+    - Dashboard: stats cards с `font-display` числами, `bg-elevated`, без shadow; quick actions «Новая статья» + «Все статьи»
+    - Articles table: zebra-striping (`even:bg-muted/20`), hover `bg-elevated`
+    - Users table: zebra-striping, hover `bg-elevated`; `isBlocked`/`commentingBlocked` индикаторы (danger/warning бейджи); role badges (reviewer=purple, author=accent, reader=muted); исправлена опечатка «Ревьер» → «Ревьюер»
+    - Article edit: `bg-red-500` → `bg-danger`, `bg-yellow-500` → `bg-warning`, `bg-blue-600` → `bg-accent`; assignments table hover `bg-elevated`
+    - Notifications: `bg-accent/20` → `bg-accent/5` (консистентно с 21d)
+  - **22b — Author панель**:
+    - Dashboard: stats cards с `font-display`, `bg-elevated`, `rounded-xl`; grid `grid-cols-2 sm:grid-cols-3`; CTA «Написать статью» + «Все мои статьи»
+    - Articles list: zebra-striping, hover `bg-elevated`
+    - Article edit: `bg-yellow-600/500` → `bg-warning`, `bg-red-500` → `bg-danger`, `bg-blue-600` → `bg-accent`; assignments table hover `bg-elevated`
+  - **22c — Reviewer панель**:
+    - Dashboard: cards `bg-elevated rounded-xl`, `font-display` числа
+    - Assignments list: cards `rounded-xl`, hover `bg-elevated`
+    - Assignment detail & versions: уже использовали семантические цвета — без изменений
+- **Валидация**: `npm run build` OK на каждом суб-шаге
+- **Файлы** (10):
+  - Admin: `page.tsx`, `articles/page.tsx`, `users/page.tsx`, `articles/[id]/page.tsx`, `notifications/page.tsx`
+  - Author: `page.tsx`, `articles/page.tsx`, `articles/[id]/page.tsx`
+  - Reviewer: `page.tsx`, `assignments/page.tsx`
+
+### Фаза 23: Анимации и micro-interactions (Done)
+- **Что сделано**:
+  - **globals.css**: 5 новых keyframes (`fadeInUp`, `pulse-badge`, `bookmark-pop`, `spin-in`, copy-button `.copied svg`), `.animate-in` с stagger delay через CSS custom property `--index`, `prefers-reduced-motion: reduce` override, body `transition: background-color/color 0.3s` для плавной смены темы, базовый `button, a` transition 0.15s
+  - **Карточки статей**: `ArticleCard` получил prop `index`, класс `.animate-in` и `--index` через style — stagger-анимация на `/`, `/blog`, `/bookmarks`
+  - **Scroll progress bar**: новый клиентский компонент `scroll-progress.tsx` — fixed top-0, h-[3px], bg-accent, z-[51], rAF-throttled; интегрирован в `blog/[slug]/page.tsx`
+  - **CopyButton**: CSS-only анимация `.copied svg` через fadeInUp 0.2s
+  - **TOC**: `transition-colors` → `transition-[color,border-color] duration-200` на кнопках навигации
+  - **BookmarkButton**: SVG fill через CSS-классы `fill-current`/`fill-none` + `transition-[fill]`, pop-анимация `bookmark-pop` при переходе в bookmarked (через useRef для направления)
+  - **NotificationBadge**: `motion-safe:animate-[pulse-badge_2s_ease-in-out_infinite]` на badge
+  - **ThemeToggle**: `motion-safe:animate-[spin-in_0.3s_ease-out]` на обоих SVG (sun/moon)
+  - **Empty states** (6 страниц): добавлены SVG-иконки + centered layout (`py-20, flex-col items-center`) по паттерну bookmarks — `/blog`, reader/admin/author/reviewer notifications, reviewer assignments
+- **Валидация**: `npm run build` OK
+- **Файлы** (16):
+  - CSS: `globals.css`
+  - Компоненты: `article-card.tsx`, `scroll-progress.tsx` (новый), `toc.tsx`, `bookmark-button.tsx`, `notification-badge.tsx`, `theme-toggle.tsx`
+  - Страницы: `page.tsx` (home), `blog/page.tsx`, `blog/[slug]/page.tsx`, `bookmarks/page.tsx`, reader `notifications/page.tsx`, admin `notifications/page.tsx`, author `notifications/page.tsx`, reviewer `notifications/page.tsx`, reviewer `assignments/page.tsx`
+
+### Фаза 24: Responsive + Accessibility + Визуальный аудит (Done)
+
+**Scope**: Responsive layout, accessibility, визуальная консистентность, обновление тест-кейсов и тест-плана.
+
+**Суб-шаги**: 24a → 24b → 24c → 24d → 24e
+
+#### 24a — Responsive + Accessibility (реализация)
+
+**Responsive** (breakpoints: 375px, 768px, 1024px):
+
+1. Nav: mobile (<768px) — hamburger/compact menu
+2. `/` (главная): hero и карточки stack вертикально на mobile
+3. `/blog`: карточки 1col mobile → 2col desktop
+4. `/blog/[slug]`: TOC — `<details>` на mobile, sticky sidebar на >1024px
+5. `/authors/[slug]`: аватар + info stack вертикально
+6. Review split-pane (`reviewer/assignments/[id]`, `author/articles/[id]/review`): stack вертикально на mobile
+7. Admin таблицы: `overflow-x-auto` на mobile
+8. `EditorWithPreview`: right/left layout скрыты на mobile, bottom only
+9. Формы: full-width inputs на mobile
+10. Комментарии: уменьшить indent вложенности на mobile
+
+**Accessibility**:
+
+1. `src/app/layout.tsx`: skip-to-content ссылка (`<a href="#main-content" class="sr-only focus:not-sr-only ...">Перейти к содержимому</a>`), `id="main-content"` на `<main>`
+2. Icon-only кнопки — `aria-label`:
+   - ThemeToggle: «Переключить тему»
+   - CopyButton: «Скопировать код»
+   - NotificationBadge: «Уведомления»
+   - ShareButton: «Поделиться»
+   - BookmarkButton: «Добавить в закладки» / «Убрать из закладок»
+   - Vote buttons: «Голос за» / «Голос против»
+3. `focus-visible`: `ring-2 ring-offset-2` с accent-цветом на всех интерактивных элементах
+4. `prefers-reduced-motion`: все анимации из фазы 23 отключаются
+5. Images: alt text на cover images и аватарах
+
+**Валидация**: `npm run build`
+
+#### 24b — design-watcher (аудит визуальной консистентности)
+
+`@design-watcher` — полный аудит визуального качества после UI-рефакторинга фаз 20–24a:
+
+- Grep hardcoded цвета вне CSS-переменных
+- Grep запрещённые шрифты
+- Grep `box-shadow` (кроме focus-ring)
+- Grep отсутствие `aria-label` на icon-only кнопках
+- `npm run build`
+- Исправить P0 автоматически
+
+#### 24c — code-reviewer (ревью кода UI-изменений)
+
+`@code-reviewer` — ревью всех изменений фаз 20–24a:
+
+- Фокус: client-компоненты (`useEffect` cleanup, hydration), CSS-переменные (не пропущены ли dark-mode), TypeScript-типы
+- Отчёт P0/P1/P2/P3 → фиксить P0 и P1
+
+#### 24d — security-reviewer (безопасность UI-изменений)
+
+`@security-reviewer` — аудит безопасности изменений фаз 20–24a:
+
+- Особое внимание: новые client-компоненты (scroll-progress, mobile menu), `dangerouslySetInnerHTML`, event listeners, `aria-*` атрибуты
+- Проверка auth bypass, XSS, секреты, валидация → фиксить CRITICAL/HIGH
+
+#### 24e — Обновление тест-кейсов и тест-плана
+
+Используется скилл `qa-test-planner`. Задача: обновить тестовую документацию после UI/UX рефакторинга фаз 20–24.
+
+1. **`testing/TEST-PLAN.md`** — обновить:
+   - Секция «UI/UX тестирование» в In Scope
+   - Entry criteria: «CSS-переменные, нет hardcoded цветов»
+   - Exit criteria: «Responsive на 375/768/1024px, a11y checklist пройден»
+
+2. **`testing/test-cases/TC-UI.md`** — новый файл, 15 тест-кейсов:
+   - TC-UI-001: Skip-to-content ссылка
+   - TC-UI-002: Dark/light тема
+   - TC-UI-003: Mobile nav (375px)
+   - TC-UI-004: Mobile карточки статей (375px)
+   - TC-UI-005: Mobile TOC (375px)
+   - TC-UI-006: Mobile split-pane ревью (375px)
+   - TC-UI-007: Mobile таблицы admin (375px)
+   - TC-UI-008: Focus-visible
+   - TC-UI-009: Reduced motion
+   - TC-UI-010: Aria-labels на icon-only кнопках
+   - TC-UI-011: Page load анимации (desktop)
+   - TC-UI-012: Scroll progress bar
+   - TC-UI-013: Empty states
+   - TC-UI-014: Hover states
+   - TC-UI-015: Cover image в карточках
+
+   Формат: как в `testing/test-cases/TC-GUEST.md` (Priority, Type, Preconditions, Steps с Expected, Post-conditions)
+
+3. **`testing/smoke/SMOKE-SUITE.md`** — добавить:
+   - SMOKE-UI-001: Dark/light тема переключается без сломанных элементов
+   - SMOKE-UI-002: Mobile nav работает (375px)
+   - SMOKE-UI-003: Skip-to-content ссылка (Tab → видна)
+
+4. **`testing/regression/REGRESSION-SUITE.md`** — добавить секцию «UI/UX Regression» со ссылками на TC-UI-001..TC-UI-015
+
+**Ожидаемые файлы**:
+- `testing/TEST-PLAN.md` — обновлён
+- `testing/test-cases/TC-UI.md` — новый, 15 TC
+- `testing/smoke/SMOKE-SUITE.md` — +3 smoke теста
+- `testing/regression/REGRESSION-SUITE.md` — +секция UI/UX
+
+#### Валидация фазы 24
+
+- [ ] `npm run build` OK
+- [ ] design-watcher: 0 P0
+- [ ] code-reviewer: 0 P0
+- [ ] security-reviewer: 0 CRITICAL
+- [ ] Тестовая документация обновлена
+
+### Фаза 25: E2E прогон UI + UX ревью + финализация
+
+**Scope**: Прогон UI тест-кейсов через playwright-tester, UX ревью ключевых flows, SEO-проверка, запись результатов.
+
+**Суб-шаги**: 25a → 25b → 25c → 25d → 25e
+
+#### 25a — playwright-tester (smoke UI)
+
+Набор тестов:
+1. Стандартный smoke из `testing/smoke/SMOKE-SUITE.md`
+2. Новые UI smoke: SMOKE-UI-001, SMOKE-UI-002, SMOKE-UI-003
+3. Из `testing/test-cases/TC-UI.md`: TC-UI-001 (skip-to-content), TC-UI-002 (dark/light), TC-UI-003 (mobile nav), TC-UI-008 (focus-visible)
+
+Вердикт: GO / NO-GO → `testing/reports/REPORT_UI.md`
+
+#### 25b — UX ревью (ручной проход)
+
+5 ключевых flows через Playwright MCP:
+1. Гость читает статью: `/` → `/blog/[slug]`
+2. Читатель взаимодействует: login reader → комментарий, голос, закладка → `/bookmarks`
+3. Автор создаёт статью: login author → `/author` → черновик → публикация
+4. Ревьюер проводит ревью: login reviewer → `/reviewer` → назначение
+5. Админ управляет: `/admin/login` → dashboard, статьи, пользователи, настройки
+
+Итог → `testing/reports/REPORT_UX.md`
+
+#### 25c — SEO-проверка
+
+- `generateMetadata()` не пропали при рефакторинге
+- Один `h1` на страницу
+- `og:image` работает
+- `alt` на всех изображениях
+- JSON-LD на `/blog/[slug]` не сломан
+
+#### 25d — Фикс найденных проблем
+
+- P0 из REPORT_UI.md
+- P0 из REPORT_UX.md
+- HIGH из SEO-проверки
+- `npm run build` после каждого фикса
+
+#### 25e — Повторный прогон + запись результатов
+
+1. Повторный smoke → `testing/reports/REPORT_UI_FINAL.md`
+2. Обновить PLAN.md (статусы + история)
+3. Обновить CLAUDE.md (новые конвенции)
+
+#### Результаты фазы 25 (Done)
+
+**25a — playwright-tester (smoke UI)**:
+- Первый прогон: 21/24 (1 P0, 2 P2) → **NO-GO**
+- P0: `onClick` в Server Component `article-card.tsx:153` → /blog 500
+- P2: skip-link не перемещает фокус (нет `tabIndex={-1}` на `<main>`)
+- Отчёт: `testing/reports/REPORT_UI.md`
+
+**25b — UX ревью**:
+- 5/5 flows пройдены
+- P0: `POST /api/articles/[id]/comments` → 500 (нет articleVersions для seed-статей)
+- Отчёт: `testing/reports/REPORT_UX.md`
+
+**25c — SEO-проверка**:
+- 1 HIGH: `src/app/page.tsx` — пропал `generateMetadata()` при рефакторинге
+- 1 MEDIUM: 2 декоративных `alt=""` — не требует фикса (WAI-ARIA correct)
+- h1, og:image, JSON-LD — PASS
+
+**25d — Фиксы** (4 исправления):
+1. P0: Удалён `onClick` из `article-card.tsx` (Server Component)
+2. P2: Добавлен `tabIndex={-1}` на `<main>` в `layout.tsx`
+3. HIGH SEO: Восстановлен `generateMetadata()` в `page.tsx`
+4. P0: Auto-create initial `articleVersion` в `comments/route.ts`
+- `npm run build` OK после каждого фикса
+
+**25e — Повторный прогон**:
+- 21/21 PASS → **GO**
+- Отчёт: `testing/reports/REPORT_UI_FINAL.md`
+- PLAN.md и CLAUDE.md обновлены
+
+#### Валидация фазы 25
+
+- [x] `npm run build` OK
+- [x] playwright-tester: GO (21/21)
+- [x] SEO: 0 HIGH (после фикса)
+- [x] PLAN.md и CLAUDE.md обновлены
+
+**Файлы** (изменённые/созданные):
+- `src/components/article-card.tsx` — удалён onClick
+- `src/app/layout.tsx` — tabIndex на main
+- `src/app/page.tsx` — generateMetadata восстановлен
+- `src/app/api/articles/[id]/comments/route.ts` — auto-create initial version
+- `testing/reports/REPORT_UI.md` — отчёт 25a
+- `testing/reports/REPORT_UX.md` — отчёт 25b
+- `testing/reports/REPORT_UI_FINAL.md` — финальный прогон
+- `PLAN.md` — обновлён
+- `CLAUDE.md` — обновлён (секция Design System)

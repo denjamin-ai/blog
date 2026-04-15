@@ -7,6 +7,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run build` — production build (use as primary validation)
 - `npm run lint` — ESLint
 - `npm run seed` — seed database (`npx tsx src/lib/db/seed.ts`)
+- `npm run seed:test` — seed test database
+- `npm run dev:test` — start test environment (dev server + test seed)
+- `npm run test:reset` — reset test DB to clean state
+- `npm run test:e2e` — run Playwright E2E tests
+- `npm run test:e2e:ui` — Playwright UI mode
+- `npm run test:e2e:report` — open last test report (`testing/reports/playwright-html`)
 - `npx drizzle-kit generate` — generate DB migrations after schema changes
 - `npx drizzle-kit migrate` — apply migrations
 
@@ -195,6 +201,10 @@ Layout calls `requireUser("reviewer")`. All `/api/reviewer/*` routes enforce `se
 - `compileMDX(source)` — compiles MDX string with custom component map
 - `Expandable` is the **only** component registered in `mdxComponents`
 - `CodeCopyButtons` (`src/components/mdx/copy-button.tsx`) is a standalone client component rendered directly in article pages; attaches copy buttons to `[data-rehype-pretty-code-figure]` elements via DOM `useEffect`
+- **LaTeX math**: `remark-math` + `rehype-katex` in the MDX pipeline — use `$inline$` and `$$block$$` syntax
+- **Mermaid diagrams**: `mermaid` package — client-side rendering via lazy-loaded component
+- **Video**: `fluent-ffmpeg` + `ffprobe` installed for server-side video processing
+- **Heading anchors**: `rehype-slug` adds `id` attributes to headings for deep links
 
 ### API pattern (`src/app/api/`)
 - Admin routes: `await requireAdmin()` first
@@ -212,7 +222,41 @@ Layout calls `requireUser("reviewer")`. All `/api/reviewer/*` routes enforce `se
 - Pages that query the DB use `export const dynamic = "force-dynamic"`
 - UI text is in Russian
 - `parseTags()` utility in `src/lib/utils.ts` — use for reading `article.tags` JSON
-- No test suite exists — `npm run build` is the primary correctness check
+- `npm run build` is the primary correctness check; Playwright E2E tests live in `testing/` (config: `playwright.config.ts`). Test utilities and reset scripts are in `.agents/playwright-tester/`.
+
+## Design System (фазы 20–24)
+
+### Шрифты (`src/app/layout.tsx`)
+- **Display**: Playfair Display — `font-display` (`--font-playfair`), h1–h3, логотип, hero
+- **Body**: Manrope — `font-sans` (`--font-manrope`), body, UI
+- **Mono**: system stack — `font-mono` (`--font-mono`), code blocks
+- Подключены через `next/font/google`, subsets `["latin", "cyrillic"]`
+
+### Цвета (`src/app/globals.css`)
+- **Акцент**: Teal (`#0f766e` light / `#2dd4bf` dark) — все интерактивные элементы
+- **Семантические**: `success`, `warning`, `danger`, `info` + `-bg`, `-border` варианты
+- **Поверхности**: `background`, `foreground`, `muted`, `elevated`, `border`
+- Dark mode: `#111111` фон, `#1e1e1e` / `#161616` поверхности
+- Не используй raw цвета (`text-red-500` и т.п.) — только CSS-переменные через Tailwind-утилиты
+
+### Анимации (`src/app/globals.css`)
+- `.animate-in` — stagger fadeInUp через CSS custom property `--index` (0-based)
+- `prefers-reduced-motion: reduce` — все анимации отключаются
+- Keyframes: `fadeInUp`, `pulse-badge`, `bookmark-pop`, `spin-in`, `fade-in`, `dialog-in`
+- Только `transform` и `opacity` — никогда `width`/`height`/`margin`
+
+### Компоненты
+- `ScrollProgress` (`src/components/scroll-progress.tsx`) — fixed progress bar на статье, `role="progressbar"`
+- `NavMobileMenu` (`src/components/nav-mobile-menu.tsx`) — hamburger на `<768px`
+- `ArticleCard` — prop `index` для stagger-анимации
+- `BookmarkButton` — CSS fill-анимация `bookmark-pop`
+- `NotificationBadge` — `pulse-badge` анимация
+- `ThemeToggle` — `spin-in` анимация
+
+### Accessibility
+- Skip-to-content: `<a href="#main-content">` в `layout.tsx`, `<main tabIndex={-1}>` для фокуса
+- `aria-label` на всех icon-only кнопках (ThemeToggle, CopyButton, BookmarkButton, и т.д.)
+- `focus-visible: ring-2 ring-offset-2` с accent-цветом
 
 ## Environment variables (`.env.local`)
 - `SESSION_SECRET` — 32+ char random string (required at startup)

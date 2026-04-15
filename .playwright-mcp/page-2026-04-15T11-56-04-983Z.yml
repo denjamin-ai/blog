@@ -1,0 +1,57 @@
+- generic [active] [ref=e1]:
+  - link "Перейти к содержимому" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - navigation [ref=e3]:
+    - generic [ref=e4]:
+      - link "devblog" [ref=e5] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e6]:
+        - link "Блог" [ref=e7] [cursor=pointer]:
+          - /url: /blog
+        - button "Переключить на тёмную тему" [ref=e44]:
+          - img [ref=e45]
+        - link "Войти" [ref=e48] [cursor=pointer]:
+          - /url: /login
+  - main [ref=e12]:
+    - generic [ref=e100]:
+      - navigation [ref=e101]:
+        - generic [ref=e102]:
+          - generic [ref=e103]:
+            - link "Ревью" [ref=e104] [cursor=pointer]:
+              - /url: /reviewer
+            - generic [ref=e105]:
+              - link "Назначения" [ref=e106] [cursor=pointer]:
+                - /url: /reviewer/assignments
+              - link "Уведомления" [ref=e107] [cursor=pointer]:
+                - /url: /reviewer/notifications
+          - button "Выйти" [ref=e109]
+      - main [ref=e110]:
+        - generic [ref=e111]:
+          - generic [ref=e112]:
+            - heading "Панель ревьера" [level=1] [ref=e113]
+            - paragraph [ref=e114]: Ваши назначения на проверку статей
+          - generic [ref=e115]:
+            - link "0 Ожидают" [ref=e116] [cursor=pointer]:
+              - /url: /reviewer/assignments?status=pending
+              - generic [ref=e117]: "0"
+              - generic [ref=e118]: Ожидают
+            - link "0 В работе" [ref=e119] [cursor=pointer]:
+              - /url: /reviewer/assignments?status=accepted
+              - generic [ref=e120]: "0"
+              - generic [ref=e121]: В работе
+            - link "0 Завершено" [ref=e122] [cursor=pointer]:
+              - /url: /reviewer/assignments?status=completed
+              - generic [ref=e123]: "0"
+              - generic [ref=e124]: Завершено
+  - contentinfo [ref=e26]:
+    - generic [ref=e27]:
+      - paragraph [ref=e28]: © 2026 Denjamin
+      - generic [ref=e29]:
+        - link "GitHub" [ref=e30] [cursor=pointer]:
+          - /url: https://github.com/denjamin
+        - link "RSS-фид" [ref=e31] [cursor=pointer]:
+          - /url: /feed.xml
+          - img [ref=e32]
+  - button "Open Next.js Dev Tools" [ref=e40] [cursor=pointer]:
+    - img [ref=e41]
+  - alert [ref=e47]

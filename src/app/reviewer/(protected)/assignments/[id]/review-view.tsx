@@ -39,12 +39,10 @@ const STATUS_LABELS: Record<Status, string> = {
 };
 
 const STATUS_COLORS: Record<Status, string> = {
-  pending:
-    "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-  accepted: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-  declined: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-  completed:
-    "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+  pending: "bg-warning-bg text-warning",
+  accepted: "bg-info-bg text-info",
+  declined: "bg-danger-bg text-danger",
+  completed: "bg-success-bg text-success",
 };
 
 function formatDate(unix: number) {
@@ -202,7 +200,7 @@ export function ReviewAssignmentView({
     setActionLoading(true);
     try {
       const res = await fetch(`/api/reviewer/assignments/${assignmentId}`, {
-        method: "PATCH",
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: next }),
       });
@@ -270,7 +268,7 @@ export function ReviewAssignmentView({
   });
 
   return (
-    <div className="flex h-[calc(100vh-57px)] -mx-4 -mt-8">
+    <div className="flex flex-col lg:flex-row h-auto lg:h-[calc(100vh-57px)] -mx-4 -mt-8">
       {/* Article / Diff content */}
       <div className="flex-1 overflow-y-auto flex flex-col">
         {/* Content tab switcher */}
@@ -331,7 +329,7 @@ export function ReviewAssignmentView({
       )}
 
       {/* Comments panel */}
-      <aside className="w-[400px] shrink-0 border-l border-border flex flex-col bg-background">
+      <aside className="w-full min-h-[50vh] lg:min-h-0 lg:w-[400px] shrink-0 border-t lg:border-t-0 lg:border-l border-border flex flex-col bg-background">
         {/* Status header */}
         <div className="px-4 py-3 border-b border-border flex items-center justify-between gap-2 shrink-0">
           <span
@@ -445,8 +443,8 @@ export function ReviewAssignmentView({
                 <span
                   className={`text-xs px-1.5 py-0.5 rounded-full ${
                     c.resolvedAt !== null
-                      ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                      : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                      ? "bg-success-bg text-success"
+                      : "bg-danger-bg text-danger"
                   }`}
                 >
                   {c.resolvedAt !== null ? "🟢 Решён" : "🔴 Открыт"}
@@ -506,7 +504,7 @@ export function ReviewAssignmentView({
               placeholder="Добавить комментарий…"
               className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-accent text-sm resize-none"
             />
-            {error && <p className="text-red-500 text-xs">{error}</p>}
+            {error && <p className="text-danger text-xs">{error}</p>}
             <button
               type="submit"
               disabled={submitting || !commentText.trim()}

@@ -167,7 +167,7 @@ export function BlogProfileEditor() {
               <button
                 type="button"
                 onClick={() => setAvatarUrl("")}
-                className="text-xs text-red-500 hover:opacity-70 mt-1 block"
+                className="text-xs text-danger hover:opacity-70 mt-1 block"
               >
                 Удалить
               </button>
@@ -208,7 +208,7 @@ export function BlogProfileEditor() {
             <button
               type="button"
               onClick={() => setDefaultOgImage("")}
-              className="text-xs text-red-500 hover:opacity-70"
+              className="text-xs text-danger hover:opacity-70"
             >
               Удалить
             </button>
@@ -240,12 +240,8 @@ export function BlogProfileEditor() {
         </div>
       </div>
 
-      {error && <p className="text-red-500 text-sm">{error}</p>}
-      {success && (
-        <p className="text-green-600 dark:text-green-400 text-sm">
-          Настройки сохранены
-        </p>
-      )}
+      {error && <p className="text-danger text-sm">{error}</p>}
+      {success && <p className="text-success text-sm">Настройки сохранены</p>}
 
       <button
         type="submit"

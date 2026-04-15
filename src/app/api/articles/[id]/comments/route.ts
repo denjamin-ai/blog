@@ -206,6 +206,8 @@ export async function POST(
       id: articles.id,
       status: articles.status,
       authorId: articles.authorId,
+      title: articles.title,
+      content: articles.content,
     })
     .from(articles)
     .where(eq(articles.id, id))
@@ -252,8 +254,8 @@ export async function POST(
     }
   }
 
-  // Get current version
-  const currentVersion = await db
+  // Get current version — create initial snapshot if none exists
+  let currentVersion = await db
     .select({ id: articleVersions.id })
     .from(articleVersions)
     .where(eq(articleVersions.articleId, id))
@@ -262,10 +264,16 @@ export async function POST(
     .get();
 
   if (!currentVersion) {
-    return NextResponse.json(
-      { error: "Версия статьи не найдена" },
-      { status: 500 },
-    );
+    const versionId = ulid();
+    const versionNow = Math.floor(Date.now() / 1000);
+    await db.insert(articleVersions).values({
+      id: versionId,
+      articleId: id,
+      title: article.title,
+      content: article.content,
+      createdAt: versionNow,
+    });
+    currentVersion = { id: versionId };
   }
 
   const now = Math.floor(Date.now() / 1000);

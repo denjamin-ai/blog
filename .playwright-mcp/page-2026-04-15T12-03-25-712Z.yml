@@ -1,0 +1,109 @@
+- generic [ref=e1]:
+  - link "Перейти к содержимому" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - navigation [ref=e3]:
+    - generic [ref=e4]:
+      - link "devblog" [ref=e5] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e6]:
+        - link "Блог" [ref=e7] [cursor=pointer]:
+          - /url: /blog
+        - button "Переключить на светлую тему" [active] [ref=e101]:
+          - img [ref=e9]
+        - link "Админка" [ref=e11] [cursor=pointer]:
+          - /url: /admin
+        - button "Выйти" [ref=e13]
+  - main [ref=e14]:
+    - generic [ref=e15]:
+      - navigation [ref=e16]:
+        - generic [ref=e17]:
+          - generic [ref=e18]:
+            - link "Админка" [ref=e19] [cursor=pointer]:
+              - /url: /admin
+            - generic [ref=e20]:
+              - link "Статьи" [ref=e21] [cursor=pointer]:
+                - /url: /admin/articles
+              - link "Пользователи" [ref=e22] [cursor=pointer]:
+                - /url: /admin/users
+              - link "Уведомления" [ref=e23] [cursor=pointer]:
+                - /url: /admin/notifications
+              - link "Настройки" [ref=e24] [cursor=pointer]:
+                - /url: /admin/settings
+              - link "Сайт →" [ref=e25] [cursor=pointer]:
+                - /url: /
+          - button "Выйти" [ref=e27]
+      - main [ref=e28]:
+        - generic [ref=e29]:
+          - generic [ref=e30]:
+            - heading "Панель управления" [level=1] [ref=e31]
+            - generic [ref=e32]:
+              - link "Новая статья" [ref=e33] [cursor=pointer]:
+                - /url: /admin/articles/new
+              - link "Все статьи" [ref=e34] [cursor=pointer]:
+                - /url: /admin/articles
+          - generic [ref=e35]:
+            - link "3 Всего статей" [ref=e36] [cursor=pointer]:
+              - /url: /admin/articles
+              - generic [ref=e37]: "3"
+              - generic [ref=e38]: Всего статей
+            - link "3 Опубликовано" [ref=e39] [cursor=pointer]:
+              - /url: /admin/articles?status=published
+              - generic [ref=e40]: "3"
+              - generic [ref=e41]: Опубликовано
+            - link "0 Черновики" [ref=e42] [cursor=pointer]:
+              - /url: /admin/articles?status=draft
+              - generic [ref=e43]: "0"
+              - generic [ref=e44]: Черновики
+            - link "0 Запланировано" [ref=e45] [cursor=pointer]:
+              - /url: /admin/articles?status=scheduled
+              - generic [ref=e46]: "0"
+              - generic [ref=e47]: Запланировано
+          - generic [ref=e48]:
+            - heading "Вовлечённость" [level=2] [ref=e49]
+            - generic [ref=e50]:
+              - generic [ref=e51]:
+                - generic [ref=e52]: "2"
+                - generic [ref=e53]: Просмотры
+              - generic [ref=e54]:
+                - generic [ref=e55]: "0"
+                - generic [ref=e56]: Закладки
+              - generic [ref=e57]:
+                - generic [ref=e58]: "0"
+                - generic [ref=e59]: Комментарии
+          - generic [ref=e60]:
+            - generic [ref=e61]:
+              - heading "Топ-5 по просмотрам" [level=2] [ref=e62]
+              - list [ref=e63]:
+                - listitem [ref=e64]:
+                  - 'link "1. Интерактивные MDX-компоненты: раскрывающийся контент 2" [ref=e65] [cursor=pointer]':
+                    - /url: /admin/articles/01KP8F7EDVJH72T8857593S3J5
+                    - generic [ref=e66]: "1."
+                    - generic [ref=e67]: "Интерактивные MDX-компоненты: раскрывающийся контент"
+                    - generic [ref=e68]: "2"
+                - listitem [ref=e69]:
+                  - link "2. Полезные utility-типы в TypeScript 0" [ref=e70] [cursor=pointer]:
+                    - /url: /admin/articles/01KP8F7ED1KWBENJFY5SV6N1A1
+                    - generic [ref=e71]: "2."
+                    - generic [ref=e72]: Полезные utility-типы в TypeScript
+                    - generic [ref=e73]: "0"
+                - listitem [ref=e74]:
+                  - 'link "3. Drizzle ORM: быстрый старт с SQLite 0" [ref=e75] [cursor=pointer]':
+                    - /url: /admin/articles/01KP8F7EDEAM2MQSS5RZ61ZW77
+                    - generic [ref=e76]: "3."
+                    - generic [ref=e77]: "Drizzle ORM: быстрый старт с SQLite"
+                    - generic [ref=e78]: "0"
+            - generic [ref=e79]:
+              - heading "Топ-5 по рейтингу" [level=2] [ref=e80]
+              - paragraph [ref=e81]: Нет данных
+  - contentinfo [ref=e82]:
+    - generic [ref=e83]:
+      - paragraph [ref=e84]: © 2026 Denjamin
+      - generic [ref=e85]:
+        - link "GitHub" [ref=e86] [cursor=pointer]:
+          - /url: https://github.com/denjamin
+        - link "RSS-фид" [ref=e87] [cursor=pointer]:
+          - /url: /feed.xml
+          - img [ref=e88]
+  - button "Open Next.js Dev Tools" [ref=e96] [cursor=pointer]:
+    - img [ref=e97]
+  - alert [ref=e100]

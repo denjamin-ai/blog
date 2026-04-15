@@ -62,10 +62,8 @@ export function ArticleVoting({ articleId, initialRating }: Props) {
 
   const btnBase =
     "flex items-center justify-center w-7 h-7 rounded transition-colors";
-  const activeUp =
-    "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950";
-  const activeDown =
-    "text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950";
+  const activeUp = "text-success bg-success-bg";
+  const activeDown = "text-danger bg-danger-bg";
   const idle =
     "text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-40";
 
@@ -75,6 +73,7 @@ export function ArticleVoting({ articleId, initialRating }: Props) {
         onClick={() => vote(1)}
         disabled={loading || !authed}
         title={authed ? "Нравится" : "Войдите, чтобы голосовать"}
+        aria-label={authed ? "Нравится" : "Войдите, чтобы голосовать"}
         className={`${btnBase} ${userVote === 1 ? activeUp : idle}`}
       >
         <svg
@@ -99,6 +98,7 @@ export function ArticleVoting({ articleId, initialRating }: Props) {
         onClick={() => vote(-1)}
         disabled={loading || !authed}
         title={authed ? "Не нравится" : "Войдите, чтобы голосовать"}
+        aria-label={authed ? "Не нравится" : "Войдите, чтобы голосовать"}
         className={`${btnBase} ${userVote === -1 ? activeDown : idle}`}
       >
         <svg

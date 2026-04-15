@@ -52,7 +52,7 @@ export default async function AuthorArticlesPage() {
               {myArticles.map((article) => (
                 <tr
                   key={article.id}
-                  className="border-t border-border hover:bg-muted/30 transition-colors"
+                  className="border-t border-border hover:bg-elevated transition-colors even:bg-muted/20"
                 >
                   <td className="px-4 py-3">
                     <Link
@@ -66,8 +66,8 @@ export default async function AuthorArticlesPage() {
                     <span
                       className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
                         article.status === "published"
-                          ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                          : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
+                          ? "bg-success-bg text-success"
+                          : "bg-warning-bg text-warning"
                       }`}
                     >
                       {article.status === "published"

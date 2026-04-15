@@ -125,7 +125,7 @@ export default function ReviewerPickerModal({
               <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:300ms]" />
             </div>
           )}
-          {error && <p className="text-sm text-red-500 px-3 py-2">{error}</p>}
+          {error && <p className="text-sm text-danger px-3 py-2">{error}</p>}
           {!loading && !error && query.trim() && results.length === 0 && (
             <p className="text-sm text-muted-foreground px-3 py-2">
               Ревьеры не найдены

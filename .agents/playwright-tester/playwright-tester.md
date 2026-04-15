@@ -315,6 +315,19 @@ curl -s -b /tmp/admin_cookies.txt \
 | Rate limit voting | 2 быстрых POST vote → 429 на второй |
 | XSS в MDX | Создать статью с `<script>alert(1)</script>` → при открытии браузер блокируется на alert |
 
+### UI/UX сценарии (после фазы 24+)
+
+| Сценарий | Как проверить |
+|----------|--------------|
+| Dark/light тема | Переключить → нет hardcoded-цветных элементов |
+| Mobile nav | Resize 375px → hamburger → клик → меню → навигация |
+| Skip-to-content | Tab → видна ссылка → Enter → фокус на main |
+| Focus-visible | Tab по странице → ring виден на всех кнопках/ссылках |
+| Scroll progress | Скролл статьи → полоса наверху растёт |
+| Empty states | /bookmarks без закладок → иконка + текст |
+| Staggered animation | /blog → карточки появляются последовательно |
+| Reduced motion | emulateMedia reduced-motion → анимации нет |
+
 ## 5. После прогона — чистка (опционально)
 
 Самый быстрый способ вернуть стенд в чистое состояние:

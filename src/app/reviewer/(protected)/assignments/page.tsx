@@ -17,12 +17,10 @@ const STATUS_LABELS: Record<Status, string> = {
 };
 
 const STATUS_COLORS: Record<Status, string> = {
-  pending:
-    "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-  accepted: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-  declined: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-  completed:
-    "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+  pending: "bg-warning-bg text-warning",
+  accepted: "bg-info-bg text-info",
+  declined: "bg-danger-bg text-danger",
+  completed: "bg-success-bg text-success",
 };
 
 const FILTER_TABS: { label: string; value: string }[] = [
@@ -109,9 +107,22 @@ export default async function AssignmentsPage({
 
       {/* List */}
       {rows.length === 0 ? (
-        <p className="text-muted-foreground text-sm py-8 text-center">
-          Нет назначений
-        </p>
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <svg
+            viewBox="0 0 24 24"
+            className="w-12 h-12 text-muted-foreground/40 mb-4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M9 11l3 3L22 4" />
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+          </svg>
+          <p className="text-muted-foreground text-sm">Нет назначений</p>
+        </div>
       ) : (
         <div className="flex flex-col gap-3">
           {rows.map((row) => {
@@ -120,7 +131,7 @@ export default async function AssignmentsPage({
               <Link
                 key={row.id}
                 href={`/reviewer/assignments/${row.id}`}
-                className="block p-5 border border-border rounded-lg hover:bg-muted/50 transition-colors"
+                className="block p-5 border border-border rounded-xl hover:bg-elevated transition-colors"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">

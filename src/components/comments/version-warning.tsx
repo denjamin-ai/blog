@@ -45,8 +45,7 @@ export function VersionWarning({
     <div
       role="alert"
       className="flex items-start gap-2 px-3 py-2 rounded-lg border text-xs motion-safe:animate-fade-in
-        bg-amber-50 border-amber-200 text-amber-800
-        dark:bg-amber-900/20 dark:border-amber-700/50 dark:text-amber-300"
+        bg-warning-bg border-warning-border text-warning"
     >
       <span className="flex-1">{message}</span>
       <button

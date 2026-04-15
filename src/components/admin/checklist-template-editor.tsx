@@ -130,7 +130,7 @@ export function ChecklistTemplateEditor() {
             <button
               type="button"
               onClick={() => handleRemove(i)}
-              className="px-1.5 py-1 text-xs text-red-500 hover:opacity-70 transition-opacity"
+              className="px-1.5 py-1 text-xs text-danger hover:opacity-70 transition-opacity"
               aria-label="Удалить пункт"
             >
               ✕
@@ -155,12 +155,8 @@ export function ChecklistTemplateEditor() {
         >
           {saving ? "Сохранение…" : "Сохранить"}
         </button>
-        {saved && (
-          <span className="text-xs text-green-600 dark:text-green-400">
-            Сохранено ✓
-          </span>
-        )}
-        {error && <span className="text-xs text-red-500">{error}</span>}
+        {saved && <span className="text-xs text-success">Сохранено ✓</span>}
+        {error && <span className="text-xs text-danger">{error}</span>}
       </div>
 
       {items.length > 0 && (

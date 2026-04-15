@@ -1,0 +1,129 @@
+- generic [active] [ref=e1]:
+  - link "Перейти к содержимому" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - navigation [ref=e3]:
+    - generic [ref=e4]:
+      - link "devblog" [ref=e5] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e6]:
+        - link "Блог" [ref=e7] [cursor=pointer]:
+          - /url: /blog
+        - button "Переключить на тёмную тему" [ref=e8]:
+          - img [ref=e9]
+        - link "Войти" [ref=e11] [cursor=pointer]:
+          - /url: /login
+  - main [ref=e12]:
+    - progressbar "Прогресс чтения"
+    - generic [ref=e13]:
+      - link "← Назад к статьям" [ref=e14] [cursor=pointer]:
+        - /url: /blog
+      - generic [ref=e15]:
+        - article [ref=e16]:
+          - generic [ref=e17]:
+            - heading "Полезные utility-типы в TypeScript" [level=1] [ref=e18]
+            - generic [ref=e19]:
+              - generic [ref=e20]: 14 апреля 2026 г.
+              - generic [ref=e21]: ·
+              - generic [ref=e22]: 3 мин чтения
+              - generic [ref=e23]: ·
+              - generic [ref=e24]: 1 просм.
+            - generic [ref=e25]:
+              - generic [ref=e26]: typescript
+              - generic [ref=e27]: типы
+          - generic [ref=e28]:
+            - paragraph [ref=e29]: TypeScript предоставляет набор встроенных utility-типов, которые упрощают работу с типами.
+            - heading "Pick и Omit" [level=2] [ref=e30]
+            - paragraph [ref=e31]:
+              - code [ref=e32]: Pick
+              - text: "позволяет выбрать только нужные свойства из типа:"
+            - figure [ref=e33]:
+              - generic [ref=e34]:
+                - code [ref=e35]:
+                  - generic [ref=e36]: "interface User {"
+                  - generic [ref=e37]: "id: number;"
+                  - generic [ref=e38]: "name: string;"
+                  - generic [ref=e39]: "email: string;"
+                  - generic [ref=e40]: "role: string;"
+                  - generic [ref=e41]: "}"
+                  - generic [ref=e43]: type UserPreview = Pick<User, "id" | "name">;
+                  - generic [ref=e44]: "// { id: number; name: string }"
+                - button "Копировать код" [ref=e45] [cursor=pointer]:
+                  - img [ref=e46]
+            - paragraph [ref=e49]:
+              - code [ref=e50]: Omit
+              - text: "— обратная операция, исключает свойства:"
+            - figure [ref=e51]:
+              - generic [ref=e52]:
+                - code [ref=e53]:
+                  - generic [ref=e54]: type UserWithoutRole = Omit<User, "role">;
+                  - generic [ref=e55]: "// { id: number; name: string; email: string }"
+                - button "Копировать код" [ref=e56] [cursor=pointer]:
+                  - img [ref=e57]
+            - heading "Partial и Required" [level=2] [ref=e60]
+            - paragraph [ref=e61]:
+              - code [ref=e62]: Partial
+              - text: "делает все свойства опциональными — удобно для функций обновления:"
+            - figure [ref=e63]:
+              - generic [ref=e64]:
+                - code [ref=e65]:
+                  - generic [ref=e66]: "function updateUser(id: number, data: Partial<User>) {"
+                  - generic [ref=e67]: // data может содержать любое подмножество полей User
+                  - generic [ref=e68]: "}"
+                  - generic [ref=e70]: "updateUser(1, { name: \"New Name\" }); // OK"
+                - button "Копировать код" [ref=e71] [cursor=pointer]:
+                  - img [ref=e72]
+            - heading "Record" [level=2] [ref=e75]
+            - paragraph [ref=e76]:
+              - code [ref=e77]: Record
+              - text: "создаёт тип объекта с заданными ключами и значениями:"
+            - figure [ref=e78]:
+              - generic [ref=e79]:
+                - code [ref=e80]:
+                  - generic [ref=e81]: type StatusMap = Record<string, boolean>;
+                  - generic [ref=e83]: "const features: StatusMap = {"
+                  - generic [ref=e84]: "darkMode: true,"
+                  - generic [ref=e85]: "notifications: false,"
+                  - generic [ref=e86]: "};"
+                - button "Копировать код" [ref=e87] [cursor=pointer]:
+                  - img [ref=e88]
+            - paragraph [ref=e91]: Эти типы покрывают большинство повседневных задач при работе с TypeScript.
+          - generic [ref=e92]:
+            - generic [ref=e93]:
+              - button "Нравится" [ref=e94]:
+                - img [ref=e95]
+              - generic [ref=e97]: "0"
+              - button "Не нравится" [ref=e98]:
+                - img [ref=e99]
+            - button "В закладки" [ref=e101]:
+              - img [ref=e102]
+            - generic [ref=e105]:
+              - generic [ref=e106]: "Поделиться:"
+              - button "Поделиться в Telegram" [ref=e107] [cursor=pointer]: Telegram
+              - button "Поделиться ВКонтакте" [ref=e108] [cursor=pointer]: ВКонтакте
+              - button "Поделиться в X" [ref=e109] [cursor=pointer]: X
+              - button "Копировать ссылку" [ref=e110] [cursor=pointer]
+        - complementary [ref=e111]:
+          - navigation "Оглавление" [ref=e112]:
+            - paragraph [ref=e113]: Оглавление
+            - list [ref=e114]:
+              - listitem [ref=e115]:
+                - button "Pick и Omit" [ref=e116]
+              - listitem [ref=e117]:
+                - button "Partial и Required" [ref=e118]
+              - listitem [ref=e119]:
+                - button "Record" [ref=e120]
+      - generic [ref=e122]:
+        - heading "Комментарии" [level=2] [ref=e123]
+        - paragraph [ref=e124]: Загрузка…
+  - contentinfo [ref=e125]:
+    - generic [ref=e126]:
+      - paragraph [ref=e127]: © 2026 Denjamin
+      - generic [ref=e128]:
+        - link "GitHub" [ref=e129] [cursor=pointer]:
+          - /url: https://github.com/denjamin
+        - link "RSS-фид" [ref=e130] [cursor=pointer]:
+          - /url: /feed.xml
+          - img [ref=e131]
+  - button "Open Next.js Dev Tools" [ref=e139] [cursor=pointer]:
+    - img [ref=e140]
+  - alert [ref=e143]

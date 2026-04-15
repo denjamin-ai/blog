@@ -1,0 +1,127 @@
+- generic [active] [ref=e1]:
+  - link "Перейти к содержимому" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - navigation [ref=e3]:
+    - generic [ref=e4]:
+      - link "devblog" [ref=e5] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e6]:
+        - link "Блог" [ref=e7] [cursor=pointer]:
+          - /url: /blog
+        - button "Переключить на тёмную тему" [ref=e8]:
+          - img [ref=e9]
+        - link "Войти" [ref=e11] [cursor=pointer]:
+          - /url: /login
+  - main [ref=e12]:
+    - progressbar "Прогресс чтения"
+    - generic [ref=e13]:
+      - link "← Назад к статьям" [ref=e14] [cursor=pointer]:
+        - /url: /blog
+      - generic [ref=e15]:
+        - article [ref=e16]:
+          - generic [ref=e17]:
+            - heading "Полезные utility-типы в TypeScript" [level=1] [ref=e18]
+            - generic [ref=e19]:
+              - generic [ref=e20]: 14 апреля 2026 г.
+              - generic [ref=e21]: ·
+              - generic [ref=e22]: 3 мин чтения
+            - generic [ref=e23]:
+              - generic [ref=e24]: typescript
+              - generic [ref=e25]: типы
+          - generic [ref=e26]:
+            - paragraph [ref=e27]: TypeScript предоставляет набор встроенных utility-типов, которые упрощают работу с типами.
+            - heading "Pick и Omit" [level=2] [ref=e28]
+            - paragraph [ref=e29]:
+              - code [ref=e30]: Pick
+              - text: "позволяет выбрать только нужные свойства из типа:"
+            - figure [ref=e31]:
+              - generic [ref=e32]:
+                - code [ref=e33]:
+                  - generic [ref=e34]: "interface User {"
+                  - generic [ref=e35]: "id: number;"
+                  - generic [ref=e36]: "name: string;"
+                  - generic [ref=e37]: "email: string;"
+                  - generic [ref=e38]: "role: string;"
+                  - generic [ref=e39]: "}"
+                  - generic [ref=e41]: type UserPreview = Pick<User, "id" | "name">;
+                  - generic [ref=e42]: "// { id: number; name: string }"
+                - button "Копировать код" [ref=e43] [cursor=pointer]:
+                  - img [ref=e44]
+            - paragraph [ref=e47]:
+              - code [ref=e48]: Omit
+              - text: "— обратная операция, исключает свойства:"
+            - figure [ref=e49]:
+              - generic [ref=e50]:
+                - code [ref=e51]:
+                  - generic [ref=e52]: type UserWithoutRole = Omit<User, "role">;
+                  - generic [ref=e53]: "// { id: number; name: string; email: string }"
+                - button "Копировать код" [ref=e54] [cursor=pointer]:
+                  - img [ref=e55]
+            - heading "Partial и Required" [level=2] [ref=e58]
+            - paragraph [ref=e59]:
+              - code [ref=e60]: Partial
+              - text: "делает все свойства опциональными — удобно для функций обновления:"
+            - figure [ref=e61]:
+              - generic [ref=e62]:
+                - code [ref=e63]:
+                  - generic [ref=e64]: "function updateUser(id: number, data: Partial<User>) {"
+                  - generic [ref=e65]: // data может содержать любое подмножество полей User
+                  - generic [ref=e66]: "}"
+                  - generic [ref=e68]: "updateUser(1, { name: \"New Name\" }); // OK"
+                - button "Копировать код" [ref=e69] [cursor=pointer]:
+                  - img [ref=e70]
+            - heading "Record" [level=2] [ref=e73]
+            - paragraph [ref=e74]:
+              - code [ref=e75]: Record
+              - text: "создаёт тип объекта с заданными ключами и значениями:"
+            - figure [ref=e76]:
+              - generic [ref=e77]:
+                - code [ref=e78]:
+                  - generic [ref=e79]: type StatusMap = Record<string, boolean>;
+                  - generic [ref=e81]: "const features: StatusMap = {"
+                  - generic [ref=e82]: "darkMode: true,"
+                  - generic [ref=e83]: "notifications: false,"
+                  - generic [ref=e84]: "};"
+                - button "Копировать код" [ref=e85] [cursor=pointer]:
+                  - img [ref=e86]
+            - paragraph [ref=e89]: Эти типы покрывают большинство повседневных задач при работе с TypeScript.
+          - generic [ref=e90]:
+            - generic [ref=e91]:
+              - button "Нравится" [ref=e92]:
+                - img [ref=e93]
+              - generic [ref=e95]: "0"
+              - button "Не нравится" [ref=e96]:
+                - img [ref=e97]
+            - button "В закладки" [ref=e99]:
+              - img [ref=e100]
+            - generic [ref=e103]:
+              - generic [ref=e104]: "Поделиться:"
+              - button "Поделиться в Telegram" [ref=e105] [cursor=pointer]: Telegram
+              - button "Поделиться ВКонтакте" [ref=e106] [cursor=pointer]: ВКонтакте
+              - button "Поделиться в X" [ref=e107] [cursor=pointer]: X
+              - button "Копировать ссылку" [ref=e108] [cursor=pointer]
+        - complementary [ref=e109]:
+          - navigation "Оглавление" [ref=e110]:
+            - paragraph [ref=e111]: Оглавление
+            - list [ref=e112]:
+              - listitem [ref=e113]:
+                - button "Pick и Omit" [ref=e114]
+              - listitem [ref=e115]:
+                - button "Partial и Required" [ref=e116]
+              - listitem [ref=e117]:
+                - button "Record" [ref=e118]
+      - generic [ref=e120]:
+        - heading "Комментарии" [level=2] [ref=e121]
+        - paragraph [ref=e122]: Загрузка…
+  - contentinfo [ref=e123]:
+    - generic [ref=e124]:
+      - paragraph [ref=e125]: © 2026 Denjamin
+      - generic [ref=e126]:
+        - link "GitHub" [ref=e127] [cursor=pointer]:
+          - /url: https://github.com/denjamin
+        - link "RSS-фид" [ref=e128] [cursor=pointer]:
+          - /url: /feed.xml
+          - img [ref=e129]
+  - button "Open Next.js Dev Tools" [ref=e137] [cursor=pointer]:
+    - img [ref=e138]
+  - alert [ref=e141]

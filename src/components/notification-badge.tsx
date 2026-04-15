@@ -31,7 +31,7 @@ export function NotificationBadge() {
   if (count === 0) return null;
 
   return (
-    <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-xs font-medium bg-accent text-accent-foreground rounded-full">
+    <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-xs font-medium bg-accent text-accent-foreground rounded-full motion-safe:animate-[pulse-badge_2s_ease-in-out_infinite]">
       {count > 99 ? "99+" : count}
     </span>
   );

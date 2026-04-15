@@ -16,6 +16,8 @@ export default async function AdminUsersPage() {
       username: users.username,
       name: users.name,
       role: users.role,
+      isBlocked: users.isBlocked,
+      commentingBlocked: users.commentingBlocked,
       createdAt: users.createdAt,
     })
     .from(users)
@@ -36,7 +38,7 @@ export default async function AdminUsersPage() {
       {allUsers.length === 0 ? (
         <p className="text-muted-foreground">Пользователей пока нет.</p>
       ) : (
-        <div className="border border-border rounded-lg overflow-hidden">
+        <div className="border border-border rounded-lg overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="bg-muted/50 text-left text-sm text-muted-foreground">
@@ -51,7 +53,7 @@ export default async function AdminUsersPage() {
               {allUsers.map((user) => (
                 <tr
                   key={user.id}
-                  className="border-t border-border hover:bg-muted/30 transition-colors"
+                  className="border-t border-border hover:bg-elevated transition-colors even:bg-muted/20"
                 >
                   <td className="px-4 py-3">
                     <Link
@@ -60,6 +62,20 @@ export default async function AdminUsersPage() {
                     >
                       {user.name}
                     </Link>
+                    {(user.isBlocked === 1 || user.commentingBlocked === 1) && (
+                      <div className="flex gap-1.5 mt-0.5">
+                        {user.isBlocked === 1 && (
+                          <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-danger-bg text-danger">
+                            Заблокирован
+                          </span>
+                        )}
+                        {user.commentingBlocked === 1 && (
+                          <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-warning-bg text-warning">
+                            Без комментариев
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-sm text-muted-foreground">
                     {user.username}
@@ -68,14 +84,14 @@ export default async function AdminUsersPage() {
                     <span
                       className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
                         user.role === "reviewer"
-                          ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
+                          ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
                           : user.role === "author"
-                            ? "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400"
+                            ? "bg-accent/15 text-accent"
                             : "bg-muted text-muted-foreground"
                       }`}
                     >
                       {user.role === "reviewer"
-                        ? "Ревьер"
+                        ? "Ревьюер"
                         : user.role === "author"
                           ? "Автор"
                           : "Читатель"}

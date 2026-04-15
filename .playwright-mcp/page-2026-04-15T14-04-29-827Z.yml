@@ -1,0 +1,118 @@
+- generic [active] [ref=e1]:
+  - link "Перейти к содержимому" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - navigation [ref=e3]:
+    - generic [ref=e4]:
+      - link "devblog" [ref=e5] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e6]:
+        - link "Блог" [ref=e7] [cursor=pointer]:
+          - /url: /blog
+        - button "Переключить на светлую тему" [ref=e8]:
+          - img [ref=e9]
+        - link "Кабинет автора" [ref=e15] [cursor=pointer]:
+          - /url: /author
+        - button "Выйти" [ref=e17]
+  - main [ref=e18]:
+    - generic [ref=e19]:
+      - navigation [ref=e20]:
+        - generic [ref=e21]:
+          - generic [ref=e22]:
+            - link "Кабинет автора" [ref=e23] [cursor=pointer]:
+              - /url: /author
+            - generic [ref=e24]:
+              - link "Мои статьи" [ref=e25] [cursor=pointer]:
+                - /url: /author/articles
+              - link "Профиль" [ref=e26] [cursor=pointer]:
+                - /url: /author/profile
+              - link "Уведомления" [ref=e27] [cursor=pointer]:
+                - /url: /author/notifications
+              - link "Сайт →" [ref=e28] [cursor=pointer]:
+                - /url: /
+          - button "Выйти" [ref=e30]
+      - main [ref=e31]:
+        - generic [ref=e72]:
+          - generic [ref=e73]:
+            - generic [ref=e74]:
+              - generic [ref=e75]:
+                - heading "Редактирование" [level=1] [ref=e76]
+                - generic [ref=e150]: Сохранено
+              - paragraph [ref=e77]: Без активного ревью
+            - link "История" [ref=e79] [cursor=pointer]:
+              - /url: /author/articles/01KP8Q6ACRY4Z8CNF3NE0YCV4T/history
+          - generic [ref=e80]:
+            - generic [ref=e81]:
+              - generic [ref=e82]: Заголовок
+              - textbox [ref=e83]: Тестовая статья с медиа
+            - generic [ref=e84]:
+              - generic [ref=e85]: Slug
+              - textbox [ref=e86]: test-media-article
+            - generic [ref=e87]:
+              - generic [ref=e88]: Описание
+              - textbox [ref=e89]: Тест медиафайлов
+            - generic [ref=e90]:
+              - generic [ref=e91]: Теги (через запятую)
+              - textbox [ref=e92]
+            - generic [ref=e93]:
+              - generic [ref=e94]: Обложка
+              - button "Choose File" [ref=e95]
+            - generic [ref=e96]:
+              - generic [ref=e97]: Уровень сложности
+              - combobox [ref=e98]:
+                - option "Не указан" [selected]
+                - option "Простой"
+                - option "Средний"
+                - option "Сложный"
+          - generic [ref=e100]:
+            - button "Диаграмма" [ref=e102]:
+              - img [ref=e103]
+              - text: Диаграмма
+              - img [ref=e108]
+            - button "∑ Формула" [ref=e111]:
+              - generic [ref=e112]: ∑
+              - text: Формула
+              - img [ref=e113]
+            - generic [ref=e115]:
+              - generic [ref=e116]: "Предпросмотр:"
+              - button "Без предпросмотра" [pressed] [ref=e117]:
+                - img [ref=e118]
+              - button "Предпросмотр справа" [ref=e120]:
+                - img [ref=e121]
+              - button "Предпросмотр слева" [ref=e123]:
+                - img [ref=e124]
+              - button "Предпросмотр снизу" [ref=e126]:
+                - img [ref=e127]
+            - generic [ref=e130]:
+              - generic [ref=e131]:
+                - generic [ref=e132]: Контент (MDX)
+                - button "Добавить медиа" [ref=e133]:
+                  - img [ref=e134]
+                  - text: Добавить медиа
+              - generic [ref=e156]:
+                - paragraph [ref=e158]: small_picture.png
+                - button "Вставить" [ref=e159]
+                - button "Закрыть превью" [ref=e160]: ✕
+              - textbox [ref=e138]: "<ArticleImage src=\"/uploads/01KP8Q7Y125T3J27Z21ZXGGESS.png\" alt=\"\" /> # Тестовая статья с медиа Это статья для тестирования загрузки медиафайлов. Медиа будет добавлено ниже:"
+          - generic [ref=e139]:
+            - generic [ref=e140]:
+              - generic [ref=e141]: Заметка об изменении (опционально)
+              - textbox "Что изменено?" [ref=e142]
+            - generic [ref=e143]:
+              - button "Сохранить" [ref=e144]
+              - button "Опубликовать" [ref=e145]
+              - button "Запланировать" [ref=e146]
+              - button "На ревью" [ref=e147]
+              - button "Предпросмотр" [ref=e148]
+              - button "Удалить" [ref=e149]
+  - contentinfo [ref=e53]:
+    - generic [ref=e54]:
+      - paragraph [ref=e55]: © 2026 Denjamin
+      - generic [ref=e56]:
+        - link "GitHub" [ref=e57] [cursor=pointer]:
+          - /url: https://github.com/denjamin
+        - link "RSS-фид" [ref=e58] [cursor=pointer]:
+          - /url: /feed.xml
+          - img [ref=e59]
+  - button "Open Next.js Dev Tools" [ref=e67] [cursor=pointer]:
+    - img [ref=e68]
+  - alert [ref=e71]

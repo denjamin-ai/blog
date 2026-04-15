@@ -1,27 +1,59 @@
-"use client";
-
 import Link from "next/link";
-import { useState } from "react";
+import { getSession } from "@/lib/auth";
 import { ThemeToggle } from "./theme-toggle";
+import { NotificationBadge } from "./notification-badge";
+import { NavMobileMenu } from "./nav-mobile-menu";
 
-const links = [
-  { href: "/", label: "Главная" },
-  { href: "/blog", label: "Блог" },
-];
+const navLinks = [{ href: "/blog", label: "Блог" }];
 
-export function Nav() {
-  const [menuOpen, setMenuOpen] = useState(false);
+export async function Nav() {
+  const session = await getSession();
+
+  const isAdmin = session.isAdmin;
+  const userRole = session.userRole;
+  const isLoggedIn = !!(session.userId || session.isAdmin);
+
+  let portalHref: string | undefined;
+  let portalLabel: string | undefined;
+
+  if (isAdmin) {
+    portalHref = "/admin";
+    portalLabel = "Админка";
+  } else if (userRole === "author") {
+    portalHref = "/author";
+    portalLabel = "Кабинет автора";
+  } else if (userRole === "reviewer") {
+    portalHref = "/reviewer";
+    portalLabel = "Кабинет ревьюера";
+  } else if (userRole === "reader") {
+    portalHref = "/reader";
+    portalLabel = "Лента";
+  }
+
+  async function logoutAction() {
+    "use server";
+    const { getSession } = await import("@/lib/auth");
+    const sess = await getSession();
+    const isAdminSession = sess.isAdmin;
+    sess.destroy();
+    const { redirect } = await import("next/navigation");
+    redirect(isAdminSession ? "/admin/login" : "/login");
+  }
 
   return (
-    <nav className="border-b border-border">
+    <nav className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md relative">
       <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
-        <Link href="/" className="font-bold text-lg hover:text-accent transition-colors">
+        {/* Logo */}
+        <Link
+          href="/"
+          className="font-display font-bold text-xl hover:text-accent transition-colors"
+        >
           devblog
         </Link>
 
         {/* Desktop */}
         <div className="hidden sm:flex items-center gap-6">
-          {links.map((link) => (
+          {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -30,50 +62,48 @@ export function Nav() {
               {link.label}
             </Link>
           ))}
-          <ThemeToggle />
-        </div>
 
-        {/* Mobile burger */}
-        <div className="flex sm:hidden items-center gap-2">
           <ThemeToggle />
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="w-9 h-9 flex items-center justify-center rounded-md hover:bg-muted transition-colors"
-            aria-label="Menu"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              {menuOpen ? (
-                <>
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </>
-              ) : (
-                <>
-                  <line x1="3" y1="6" x2="21" y2="6" />
-                  <line x1="3" y1="12" x2="21" y2="12" />
-                  <line x1="3" y1="18" x2="21" y2="18" />
-                </>
-              )}
-            </svg>
-          </button>
-        </div>
-      </div>
 
-      {/* Mobile menu */}
-      {menuOpen && (
-        <div className="sm:hidden border-t border-border px-4 py-3 space-y-2">
-          {links.map((link) => (
+          {isLoggedIn && portalHref && (
             <Link
-              key={link.href}
-              href={link.href}
-              className="block text-sm text-muted-foreground hover:text-foreground transition-colors py-1"
-              onClick={() => setMenuOpen(false)}
+              href={portalHref}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              {link.label}
+              {portalLabel}
             </Link>
-          ))}
+          )}
+
+          {isLoggedIn && <NotificationBadge />}
+
+          {isLoggedIn ? (
+            <form action={logoutAction}>
+              <button
+                type="submit"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Выйти
+              </button>
+            </form>
+          ) : (
+            <Link
+              href="/login"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Войти
+            </Link>
+          )}
         </div>
-      )}
+
+        {/* Mobile */}
+        <NavMobileMenu
+          links={navLinks}
+          userPortalHref={portalHref}
+          userPortalLabel={portalLabel}
+          isLoggedIn={isLoggedIn}
+          logoutAction={isLoggedIn ? logoutAction : undefined}
+        />
+      </div>
     </nav>
   );
 }

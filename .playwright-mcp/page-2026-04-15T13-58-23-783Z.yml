@@ -1,0 +1,45 @@
+- generic [active] [ref=e1]:
+  - link "Перейти к содержимому" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - navigation [ref=e3]:
+    - generic [ref=e4]:
+      - link "devblog" [ref=e5] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e6]:
+        - link "Блог" [ref=e7] [cursor=pointer]:
+          - /url: /blog
+        - button "Переключить на светлую тему" [ref=e8]:
+          - img [ref=e9]
+        - link "Админка" [ref=e19] [cursor=pointer]:
+          - /url: /admin
+        - button "Выйти" [ref=e21]
+  - main [ref=e22]:
+    - generic [ref=e24]:
+      - paragraph [ref=e25]: devblog
+      - heading "Вход в аккаунт" [level=1] [ref=e26]
+      - generic [ref=e27]:
+        - generic [ref=e28]:
+          - generic [ref=e29]: Никнейм
+          - textbox "Никнейм" [ref=e30]:
+            - /placeholder: nickname
+            - text: author
+        - generic [ref=e31]:
+          - generic [ref=e32]: Пароль
+          - textbox "Пароль" [ref=e33]:
+            - /placeholder: ••••••••
+            - text: password
+        - paragraph [ref=e55]: Уже выполнен вход как admin
+        - button "Войти" [ref=e34]
+      - paragraph [ref=e35]: Аккаунты создаются администратором блога.
+  - contentinfo [ref=e36]:
+    - generic [ref=e37]:
+      - paragraph [ref=e38]: © 2026 Denjamin
+      - generic [ref=e39]:
+        - link "GitHub" [ref=e40] [cursor=pointer]:
+          - /url: https://github.com/denjamin
+        - link "RSS-фид" [ref=e41] [cursor=pointer]:
+          - /url: /feed.xml
+          - img [ref=e42]
+  - button "Open Next.js Dev Tools" [ref=e50] [cursor=pointer]:
+    - img [ref=e51]
+  - alert [ref=e54]

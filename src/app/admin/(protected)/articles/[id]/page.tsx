@@ -29,12 +29,10 @@ const STATUS_LABELS: Record<Assignment["status"], string> = {
 };
 
 const STATUS_CLASSES: Record<Assignment["status"], string> = {
-  pending:
-    "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-  accepted: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-  declined: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-  completed:
-    "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+  pending: "bg-warning-bg text-warning",
+  accepted: "bg-info-bg text-info",
+  declined: "bg-danger-bg text-danger",
+  completed: "bg-success-bg text-success",
 };
 
 export default function AdminArticleModerationPage() {
@@ -53,6 +51,7 @@ export default function AdminArticleModerationPage() {
   const [showSchedulePicker, setShowSchedulePicker] = useState(false);
   const [updatedAt, setUpdatedAt] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
   const [loaded, setLoaded] = useState(false);
@@ -147,6 +146,31 @@ export default function AdminArticleModerationPage() {
     loadArticle();
     loadPublicComments();
   }, [loadArticle, loadPublicComments]);
+
+  // Сохранение заголовка/slug
+  async function handleSaveMeta() {
+    setError("");
+    setSaving(true);
+    setSaved(false);
+    try {
+      const res = await fetch(`/api/articles/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, slug }),
+      });
+      if (res.ok) {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 3000);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || "Ошибка сохранения");
+      }
+    } catch {
+      setError("Ошибка сети");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   // Изменение только статуса (admin не редактирует контент)
   async function handleStatusChange(
@@ -301,14 +325,38 @@ export default function AdminArticleModerationPage() {
   }
 
   if (loadFailed) {
-    return <p className="text-red-500">{error}</p>;
+    return <p className="text-danger">{error}</p>;
   }
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">{title}</h1>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <input
+              type="text"
+              name="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="text-2xl font-bold bg-transparent border-b border-transparent hover:border-border focus:border-accent focus:outline-none w-full"
+            />
+            <button
+              type="button"
+              onClick={handleSaveMeta}
+              disabled={saving}
+              className="shrink-0 px-3 py-1 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors disabled:opacity-50"
+            >
+              {saving ? "..." : "Сохранить"}
+            </button>
+            {saved && (
+              <span
+                data-testid="saved-indicator"
+                className="saved shrink-0 text-sm text-success"
+              >
+                Сохранено
+              </span>
+            )}
+          </div>
           <p className="text-sm text-muted-foreground mt-0.5">
             Автор: {authorName ?? <em>Администратор</em>} · Обновлено:{" "}
             {new Date(updatedAt * 1000).toLocaleDateString("ru-RU")}
@@ -363,10 +411,10 @@ export default function AdminArticleModerationPage() {
           <span
             className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
               status === "published"
-                ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                ? "bg-success-bg text-success"
                 : status === "scheduled"
-                  ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
-                  : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
+                  ? "bg-info-bg text-info"
+                  : "bg-warning-bg text-warning"
             }`}
           >
             {status === "published"
@@ -382,14 +430,14 @@ export default function AdminArticleModerationPage() {
           )}
         </div>
 
-        {error && <p className="text-red-500 text-sm">{error}</p>}
+        {error && <p className="text-danger text-sm">{error}</p>}
 
         <div className="flex gap-3 flex-wrap">
           {status === "published" ? (
             <button
               onClick={() => handleStatusChange("draft")}
               disabled={saving}
-              className="px-4 py-2 bg-yellow-500 text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+              className="px-4 py-2 bg-warning text-warning-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
             >
               Снять с публикации
             </button>
@@ -405,7 +453,7 @@ export default function AdminArticleModerationPage() {
               <button
                 onClick={() => handleStatusChange(undefined, "draft")}
                 disabled={saving}
-                className="px-4 py-2 bg-yellow-500 text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                className="px-4 py-2 bg-warning text-warning-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
               >
                 Отменить расписание
               </button>
@@ -422,7 +470,7 @@ export default function AdminArticleModerationPage() {
               <button
                 onClick={() => setShowSchedulePicker((v) => !v)}
                 disabled={saving}
-                className="px-4 py-2 border border-blue-500 text-blue-600 dark:text-blue-400 rounded-lg text-sm font-medium hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors disabled:opacity-50"
+                className="px-4 py-2 border border-info text-info rounded-lg text-sm font-medium hover:bg-info-bg transition-colors disabled:opacity-50"
               >
                 Запланировать
               </button>
@@ -440,7 +488,7 @@ export default function AdminArticleModerationPage() {
           <button
             onClick={handleDelete}
             disabled={deleting || saving}
-            className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 ml-auto"
+            className="px-4 py-2 bg-danger text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 ml-auto"
           >
             {deleting ? "Удаление..." : "Удалить"}
           </button>
@@ -463,7 +511,7 @@ export default function AdminArticleModerationPage() {
             <button
               onClick={handleScheduleConfirm}
               disabled={saving || !scheduleInput}
-              className="px-4 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+              className="px-4 py-1.5 bg-accent text-accent-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
             >
               {saving ? "..." : "Подтвердить"}
             </button>
@@ -502,7 +550,7 @@ export default function AdminArticleModerationPage() {
                 {assignments.map((a) => (
                   <tr
                     key={a.id}
-                    className="border-t border-border hover:bg-muted/30 transition-colors"
+                    className="border-t border-border hover:bg-elevated transition-colors even:bg-muted/20"
                   >
                     <td className="px-3 py-2 text-sm">
                       {a.reviewerName ?? "—"}
@@ -553,7 +601,7 @@ export default function AdminArticleModerationPage() {
                   <span className="flex-1">{entry.description}</span>
                   <button
                     onClick={() => handleDeleteEntry(entry.id)}
-                    className="text-xs text-red-500 hover:opacity-70 shrink-0 transition-opacity"
+                    className="text-xs text-danger hover:opacity-70 shrink-0 transition-opacity"
                   >
                     Удалить
                   </button>
@@ -656,7 +704,7 @@ export default function AdminArticleModerationPage() {
                 {!c.deletedAt && (
                   <button
                     onClick={() => handleDeleteComment(c.id)}
-                    className="text-xs text-red-500 hover:opacity-70 shrink-0 transition-opacity"
+                    className="text-xs text-danger hover:opacity-70 shrink-0 transition-opacity"
                   >
                     Удалить
                   </button>

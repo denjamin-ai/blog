@@ -25,6 +25,7 @@ import { BookmarkButton } from "@/components/bookmark-button";
 import { ArticleVoting } from "@/components/article-voting";
 import { SubscribeButton } from "@/components/subscribe-button";
 import { ViewTracker } from "@/components/view-tracker";
+import { ScrollProgress } from "@/components/scroll-progress";
 import { getSession } from "@/lib/auth";
 import type { Metadata } from "next";
 
@@ -73,7 +74,6 @@ export async function generateMetadata({
 
   if (!row) return {};
 
-  // OG priority: explicit og fields > article defaults > profile fallback
   const metaTitle = row.ogTitle || row.title;
   const description =
     row.ogDescription ||
@@ -162,10 +162,8 @@ export default async function ArticlePage({
   }
 
   const article = row;
-
   const session = await getSession();
 
-  // Параллельные запросы: версия, рейтинг, закладка, подписка, профиль
   const [
     currentVersion,
     ratingRow,
@@ -228,7 +226,7 @@ export default async function ArticlePage({
   const initialBookmarked = !!bookmarkExisting;
   const initialSubscribed = !!subExisting;
 
-  const content = await compileMDX(article.content);
+  const mdxContent = await compileMDX(article.content);
   const tags = parseTags(article.tags);
   const readingTime = estimateReadingTime(article.content);
   const date = article.publishedAt
@@ -238,6 +236,8 @@ export default async function ArticlePage({
         day: "numeric",
       })
     : null;
+
+  const authorName = article.authorDisplayName ?? article.authorName;
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://localhost:3000";
 
@@ -266,6 +266,7 @@ export default async function ArticlePage({
 
   return (
     <>
+      <ScrollProgress />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -277,104 +278,127 @@ export default async function ArticlePage({
           href="/blog"
           className="text-sm text-muted-foreground hover:text-foreground transition-colors mb-8 inline-block"
         >
-          &larr; Назад к блогу
+          &larr; Назад к статьям
         </Link>
 
-        {/* Mobile TOC (collapsible, above article) */}
-        <div className="xl:hidden mb-6">
+        {/* Mobile TOC */}
+        <div className="lg:hidden mb-6">
           <TableOfContents content={article.content} />
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-[1fr_240px] gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_220px] gap-10">
           <article>
-            <header className="mb-8">
-              <h1 className="text-3xl font-bold mb-3">{article.title}</h1>
-              <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-                {date && <span>{date}</span>}
-                <span>{readingTime} мин чтения</span>
-                <span>{article.viewCount} просмотров</span>
-                {article.difficulty && (
-                  <DifficultyBadge difficulty={article.difficulty} />
-                )}
-                {tags.length > 0 && (
-                  <div className="flex gap-1.5">
-                    {tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="px-2 py-0.5 rounded-full bg-muted text-xs"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Автор + подписка */}
-              {article.authorId &&
-                (article.authorDisplayName ?? article.authorName) && (
-                  <div className="flex items-center gap-3 mt-3">
-                    <span className="text-sm text-muted-foreground">
-                      Автор:{" "}
-                      {article.authorSlug ? (
-                        <Link
-                          href={`/authors/${article.authorSlug}`}
-                          className="text-foreground font-medium hover:text-accent transition-colors"
-                        >
-                          {article.authorDisplayName ?? article.authorName}
-                        </Link>
-                      ) : (
-                        <span className="text-foreground font-medium">
-                          {article.authorDisplayName ?? article.authorName}
-                        </span>
-                      )}
-                    </span>
-                    <SubscribeButton
-                      authorId={article.authorId}
-                      authorName={
-                        article.authorDisplayName ?? article.authorName ?? ""
-                      }
-                      initialSubscribed={initialSubscribed}
-                    />
-                  </div>
-                )}
-
-              {/* Голосование + закладка + share */}
-              <div className="flex items-center gap-4 mt-4">
-                <ArticleVoting
-                  articleId={article.id}
-                  initialRating={initialRating}
-                />
-                <BookmarkButton
-                  articleId={article.id}
-                  initialBookmarked={initialBookmarked}
-                  initialCount={bookmarkCount}
-                />
-                <ShareButton title={article.title} slug={article.slug} />
-              </div>
-            </header>
-
+            {/* Cover image — wide, soft radius */}
             {article.coverImageUrl && (
-              <div className="relative w-full h-64 sm:h-80 rounded-xl overflow-hidden mb-8">
+              <div className="relative aspect-[2/1] w-full rounded-lg overflow-hidden mb-8">
                 <Image
                   src={article.coverImageUrl}
                   alt={article.title}
                   fill
                   priority
                   className="object-cover"
-                  sizes="(max-width: 1280px) 100vw, 800px"
+                  sizes="(max-width: 1024px) 100vw, 740px"
                 />
               </div>
             )}
 
-            <div className="prose">
-              {content}
+            {/* Title */}
+            <header className="mb-8">
+              <h1 className="font-display font-extrabold text-4xl md:text-5xl tracking-tight leading-tight mb-4">
+                {article.title}
+              </h1>
+
+              {/* Meta line: date · author · reading time · difficulty */}
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground mb-3">
+                {date && <span>{date}</span>}
+                {article.authorId && authorName && (
+                  <>
+                    <span aria-hidden="true">·</span>
+                    {article.authorSlug ? (
+                      <Link
+                        href={`/authors/${article.authorSlug}`}
+                        className="hover:text-foreground transition-colors"
+                      >
+                        {authorName}
+                      </Link>
+                    ) : (
+                      <span>{authorName}</span>
+                    )}
+                  </>
+                )}
+                <span aria-hidden="true">·</span>
+                <span>{readingTime} мин чтения</span>
+                {article.viewCount > 0 && (
+                  <>
+                    <span aria-hidden="true">·</span>
+                    <span>{article.viewCount} просм.</span>
+                  </>
+                )}
+                {article.difficulty && (
+                  <>
+                    <span aria-hidden="true">·</span>
+                    <DifficultyBadge difficulty={article.difficulty} />
+                  </>
+                )}
+              </div>
+
+              {/* Tags */}
+              {tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="px-2 py-0.5 rounded-full bg-muted text-xs text-muted-foreground"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </header>
+
+            {/* Prose content */}
+            <div className="prose max-w-none">
+              {mdxContent}
               <CodeCopyButtons />
             </div>
+
+            {/* Engagement row */}
+            <div className="flex flex-wrap items-center gap-4 mt-10 pt-8 border-t border-border">
+              <ArticleVoting
+                articleId={article.id}
+                initialRating={initialRating}
+              />
+              <BookmarkButton
+                articleId={article.id}
+                initialBookmarked={initialBookmarked}
+                initialCount={bookmarkCount}
+              />
+              <div className="ml-auto">
+                <ShareButton title={article.title} slug={article.slug} />
+              </div>
+            </div>
+
+            {/* Subscribe to author */}
+            {article.authorId && authorName && (
+              <div className="flex items-center gap-3 mt-4 text-sm text-muted-foreground">
+                <span>
+                  Автор:{" "}
+                  <span className="text-foreground font-medium">
+                    {authorName}
+                  </span>
+                </span>
+                <SubscribeButton
+                  authorId={article.authorId}
+                  authorName={authorName}
+                  initialSubscribed={initialSubscribed}
+                />
+              </div>
+            )}
           </article>
 
           {/* Desktop TOC sidebar */}
-          <aside className="hidden xl:block" data-toc>
+          <aside className="hidden lg:block" data-toc>
             <TableOfContents content={article.content} />
           </aside>
         </div>

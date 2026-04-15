@@ -35,12 +35,10 @@ const STATUS_LABELS: Record<Props["status"], string> = {
 };
 
 const STATUS_CLASSES: Record<Props["status"], string> = {
-  pending:
-    "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-  accepted: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-  declined: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-  completed:
-    "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+  pending: "bg-warning-bg text-warning",
+  accepted: "bg-info-bg text-info",
+  declined: "bg-danger-bg text-danger",
+  completed: "bg-success-bg text-success",
 };
 
 type FilterMode = "all" | "open" | "resolved";
@@ -216,8 +214,8 @@ export default function AuthorAssignmentThread({
                 <span
                   className={`text-xs px-1.5 py-0.5 rounded-full ${
                     isResolved
-                      ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                      : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                      ? "bg-success-bg text-success"
+                      : "bg-danger-bg text-danger"
                   }`}
                 >
                   {isResolved ? "🟢 Решён" : "🔴 Открыт"}
@@ -249,7 +247,7 @@ export default function AuthorAssignmentThread({
 
       {resolveError && (
         <div className="px-4 pb-3">
-          <p className="text-red-500 text-xs">{resolveError}</p>
+          <p className="text-danger text-xs">{resolveError}</p>
         </div>
       )}
     </div>

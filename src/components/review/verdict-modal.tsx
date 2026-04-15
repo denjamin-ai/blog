@@ -67,7 +67,7 @@ export function VerdictModal({
         <h2 className="text-lg font-semibold mb-4">Завершить ревью</h2>
 
         {openComments > 0 && (
-          <div className="mb-4 px-3 py-2 rounded-lg bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm dark:bg-yellow-900/20 dark:border-yellow-800 dark:text-yellow-400">
+          <div className="mb-4 px-3 py-2 rounded-lg bg-warning-bg border border-warning-border text-warning text-sm">
             У вас {openComments} открытых замечани
             {openComments === 1 ? "е" : openComments < 5 ? "я" : "й"}. Ревью
             будет завершено в любом случае.
@@ -122,7 +122,7 @@ export function VerdictModal({
             </p>
           </div>
 
-          {error && <p className="text-red-500 text-sm">{error}</p>}
+          {error && <p className="text-danger text-sm">{error}</p>}
 
           <div className="flex gap-2 justify-end pt-1">
             <button

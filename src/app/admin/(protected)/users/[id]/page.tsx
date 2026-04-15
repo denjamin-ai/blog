@@ -76,7 +76,7 @@ function AuthorArticles({ userId }: { userId: string }) {
                 <span
                   className={`text-xs px-1.5 py-0.5 rounded font-medium ${
                     isPublished
-                      ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                      ? "bg-success-bg text-success"
                       : "bg-muted text-muted-foreground"
                   }`}
                 >
@@ -98,8 +98,8 @@ function AuthorArticles({ userId }: { userId: string }) {
               disabled={busy || article.status === "scheduled"}
               className={`shrink-0 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors disabled:opacity-50 ${
                 isPublished
-                  ? "border-red-300 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
-                  : "border-green-300 text-green-700 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-900/20"
+                  ? "border-danger text-danger hover:bg-danger-bg"
+                  : "border-success text-success hover:bg-success-bg"
               }`}
             >
               {busy ? "..." : isPublished ? "Скрыть" : "Опубликовать"}
@@ -216,7 +216,7 @@ export default function EditUserPage() {
   }
 
   if (loadFailed) {
-    return <p className="text-red-500">{error}</p>;
+    return <p className="text-danger">{error}</p>;
   }
 
   return (
@@ -289,7 +289,7 @@ export default function EditUserPage() {
               <span className="text-sm">
                 Скрыть публикации автора с сайта
                 {isBlocked && (
-                  <span className="ml-2 text-xs text-red-500 font-medium">
+                  <span className="ml-2 text-xs text-danger font-medium">
                     (активно)
                   </span>
                 )}
@@ -319,7 +319,7 @@ export default function EditUserPage() {
               <span className="text-sm">
                 Запретить оставлять комментарии
                 {commentingBlocked && (
-                  <span className="ml-2 text-xs text-red-500 font-medium">
+                  <span className="ml-2 text-xs text-danger font-medium">
                     (активно)
                   </span>
                 )}
@@ -328,7 +328,7 @@ export default function EditUserPage() {
           </div>
         )}
 
-        {error && <p className="text-red-500 text-sm">{error}</p>}
+        {error && <p className="text-danger text-sm">{error}</p>}
 
         <div className="flex gap-3 flex-wrap">
           <button
@@ -348,7 +348,7 @@ export default function EditUserPage() {
           <button
             onClick={handleDelete}
             disabled={deleting || saving}
-            className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 ml-auto"
+            className="px-4 py-2 bg-danger text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 ml-auto"
           >
             {deleting ? "Удаление..." : "Удалить"}
           </button>

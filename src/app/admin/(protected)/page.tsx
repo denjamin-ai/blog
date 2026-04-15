@@ -91,12 +91,14 @@ export default async function AdminDashboard() {
     <div className="space-y-10">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Панель управления</h1>
-        <Link
-          href="/admin/articles/new"
-          className="px-4 py-2 bg-accent text-accent-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
-        >
-          Новая статья
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href="/admin/articles"
+            className="px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors"
+          >
+            Все статьи
+          </Link>
+        </div>
       </div>
 
       {/* Article counts */}
@@ -105,9 +107,11 @@ export default async function AdminDashboard() {
           <Link
             key={stat.label}
             href={stat.href}
-            className="p-5 border border-border rounded-xl shadow-sm hover:bg-muted/50 transition-colors"
+            className="p-5 bg-elevated border border-border rounded-xl hover:bg-muted/50 transition-colors"
           >
-            <div className="text-3xl font-bold mb-1">{stat.value}</div>
+            <div className="text-3xl font-display font-bold mb-1">
+              {stat.value}
+            </div>
             <div className="text-sm text-muted-foreground">{stat.label}</div>
           </Link>
         ))}
@@ -120,9 +124,11 @@ export default async function AdminDashboard() {
           {engagementStats.map((stat) => (
             <div
               key={stat.label}
-              className="p-5 border border-border rounded-xl shadow-sm"
+              className="p-5 bg-elevated border border-border rounded-xl"
             >
-              <div className="text-3xl font-bold mb-1">{stat.value}</div>
+              <div className="text-3xl font-display font-bold mb-1">
+                {stat.value}
+              </div>
               <div className="text-sm text-muted-foreground">{stat.label}</div>
             </div>
           ))}

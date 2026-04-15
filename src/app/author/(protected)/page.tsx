@@ -99,39 +99,34 @@ export default async function AuthorDashboard() {
     <div>
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-2xl font-bold">Обзор</h1>
-        <Link
-          href="/author/articles/new"
-          className="px-4 py-2 bg-accent text-accent-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
-        >
-          Написать статью
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href="/author/articles/new"
+            className="px-4 py-2 bg-accent text-accent-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+          >
+            Написать статью
+          </Link>
+          <Link
+            href="/author/articles"
+            className="px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors"
+          >
+            Все мои статьи
+          </Link>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
         {stats.map((stat) => (
           <div
             key={stat.label}
-            className="border border-border rounded-lg p-6 bg-muted/20 shadow-sm"
+            className="bg-elevated border border-border rounded-xl p-5"
           >
-            <div className="text-3xl font-bold mb-1">{stat.value}</div>
+            <div className="text-3xl font-display font-bold mb-1">
+              {stat.value}
+            </div>
             <div className="text-sm text-muted-foreground">{stat.label}</div>
           </div>
         ))}
-      </div>
-
-      <div className="flex gap-4">
-        <Link
-          href="/author/articles"
-          className="text-sm text-accent hover:underline"
-        >
-          Все мои статьи &rarr;
-        </Link>
-        <Link
-          href="/author/notifications"
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          Уведомления &rarr;
-        </Link>
       </div>
     </div>
   );

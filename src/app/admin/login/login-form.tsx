@@ -37,7 +37,12 @@ export default function LoginForm() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
-        <h1 className="text-2xl font-bold mb-6 text-center">Вход в админку</h1>
+        <p className="font-display font-bold text-2xl text-center mb-2">
+          devblog
+        </p>
+        <h1 className="text-sm text-muted-foreground text-center mb-8">
+          Вход в админку
+        </h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label
@@ -57,7 +62,7 @@ export default function LoginForm() {
               autoComplete="current-password"
             />
           </div>
-          {error && <p className="text-red-500 text-sm">{error}</p>}
+          {error && <p className="text-danger text-sm">{error}</p>}
           <button
             type="submit"
             disabled={loading}

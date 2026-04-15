@@ -43,9 +43,7 @@ export function DiffView({ assignmentId, diffUrl }: Props) {
   }
 
   if (error) {
-    return (
-      <p className="text-sm text-red-500 px-4 py-8 text-center">{error}</p>
-    );
+    return <p className="text-sm text-danger px-4 py-8 text-center">{error}</p>;
   }
 
   if (!data) return null;
@@ -92,10 +90,7 @@ export function DiffView({ assignmentId, diffUrl }: Props) {
             {chunks.map((chunk, i) => {
               if (chunk.type === "added") {
                 return (
-                  <span
-                    key={i}
-                    className="bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-300"
-                  >
+                  <span key={i} className="bg-success-bg text-success">
                     {chunk.value}
                   </span>
                 );
@@ -104,7 +99,7 @@ export function DiffView({ assignmentId, diffUrl }: Props) {
                 return (
                   <span
                     key={i}
-                    className="bg-red-100 dark:bg-red-900/30 text-red-900 dark:text-red-300 line-through"
+                    className="bg-danger-bg text-danger line-through"
                   >
                     {chunk.value}
                   </span>

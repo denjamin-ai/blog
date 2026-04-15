@@ -1,0 +1,70 @@
+- generic [active] [ref=e1]:
+  - link "Перейти к содержимому" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - navigation [ref=e3]:
+    - generic [ref=e4]:
+      - link "devblog" [ref=e5] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e6]:
+        - button "Переключить на светлую тему" [ref=e7]:
+          - img [ref=e8]
+        - button "Открыть меню" [ref=e18]:
+          - img [ref=e19]
+  - main [ref=e20]:
+    - generic [ref=e21]:
+      - generic [ref=e23]:
+        - heading "Denjamin" [level=1] [ref=e24]
+        - paragraph [ref=e25]: Разработчик. Пишу о коде, инструментах и процессах разработки.
+      - separator [ref=e26]
+      - 'link "Интерактивные MDX-компоненты: раскрывающийся контент Обзор кастомных MDX-компонентов блога: Expandable для скрытого контента. 15 апреля 2026 г. 1 мин чтения" [ref=e28] [cursor=pointer]':
+        - /url: /blog/mdx-interactive-components
+        - generic [ref=e29]:
+          - 'heading "Интерактивные MDX-компоненты: раскрывающийся контент" [level=2] [ref=e30]'
+          - paragraph [ref=e31]: "Обзор кастомных MDX-компонентов блога: Expandable для скрытого контента."
+          - generic [ref=e32]:
+            - generic [ref=e33]: 15 апреля 2026 г.
+            - generic [ref=e34]: 1 мин чтения
+      - separator [ref=e35]
+      - generic [ref=e37]:
+        - article [ref=e38]:
+          - generic [ref=e39]:
+            - 'link "Drizzle ORM: быстрый старт с SQLite" [ref=e40] [cursor=pointer]':
+              - /url: /blog/drizzle-orm-intro
+              - 'heading "Drizzle ORM: быстрый старт с SQLite" [level=3] [ref=e41]'
+            - paragraph [ref=e42]: "Настройка Drizzle ORM с SQLite: схема, миграции и типобезопасные запросы."
+            - generic [ref=e43]:
+              - generic [ref=e44]: 15 апр. 2026 г.
+              - generic [ref=e45]: ·
+              - generic [ref=e46]: 2 мин
+            - generic [ref=e47]:
+              - generic [ref=e48]: drizzle
+              - generic [ref=e49]: sqlite
+              - generic [ref=e50]: orm
+        - article [ref=e51]:
+          - generic [ref=e52]:
+            - link "Полезные utility-типы в TypeScript" [ref=e53] [cursor=pointer]:
+              - /url: /blog/typescript-utility-types
+              - heading "Полезные utility-типы в TypeScript" [level=3] [ref=e54]
+            - paragraph [ref=e55]: "Обзор встроенных utility-типов: Pick, Omit, Partial, Required, Record и когда их применять."
+            - generic [ref=e56]:
+              - generic [ref=e57]: 14 апр. 2026 г.
+              - generic [ref=e58]: ·
+              - generic [ref=e59]: 3 мин
+            - generic [ref=e60]:
+              - generic [ref=e61]: typescript
+              - generic [ref=e62]: типы
+      - separator [ref=e63]
+      - link "Все статьи →" [ref=e65] [cursor=pointer]:
+        - /url: /blog
+  - contentinfo [ref=e66]:
+    - generic [ref=e67]:
+      - paragraph [ref=e68]: © 2026 Denjamin
+      - generic [ref=e69]:
+        - link "GitHub" [ref=e70] [cursor=pointer]:
+          - /url: https://github.com/denjamin
+        - link "RSS-фид" [ref=e71] [cursor=pointer]:
+          - /url: /feed.xml
+          - img [ref=e72]
+  - button "Open Next.js Dev Tools" [ref=e80] [cursor=pointer]:
+    - img [ref=e81]
+  - alert [ref=e84]

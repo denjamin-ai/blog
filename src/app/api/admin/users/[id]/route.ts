@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { users, articles, notifications } from "@/lib/db/schema";
+import {
+  users,
+  articles,
+  notifications,
+  reviewComments,
+} from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/auth";
 import { eq, and, ne } from "drizzle-orm";
 import bcrypt from "bcryptjs";
@@ -212,11 +217,16 @@ export async function DELETE(
   }
 
   // SQLite не гарантирует FK-каскады без PRAGMA foreign_keys=ON
-  // обнуляем authorId вручную перед удалением
+  // обнуляем FK-ссылки на пользователя вручную перед удалением
   await db
     .update(articles)
     .set({ authorId: null })
     .where(eq(articles.authorId, id));
+
+  await db
+    .update(reviewComments)
+    .set({ authorId: null })
+    .where(eq(reviewComments.authorId, id));
 
   await db.delete(users).where(eq(users.id, id));
 

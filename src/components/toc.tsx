@@ -48,6 +48,12 @@ function parseHeadings(content: string): TocEntry[] {
   return entries;
 }
 
+function indentClass(level: number) {
+  if (level === 3) return "ml-3";
+  if (level === 4) return "ml-6";
+  return "";
+}
+
 export function TableOfContents({ content }: { content: string }) {
   const entries = useMemo(() => parseHeadings(content), [content]);
   const [activeSlug, setActiveSlug] = useState<string>("");
@@ -88,23 +94,17 @@ export function TableOfContents({ content }: { content: string }) {
     document.getElementById(slug)?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const indentClass = (level: number) => {
-    if (level === 3) return "pl-3";
-    if (level === 4) return "pl-6";
-    return "";
-  };
-
   const list = (
-    <ul className="space-y-1 text-sm">
+    <ul className="space-y-0.5">
       {entries.map(({ level, text, slug }) => (
         <li key={slug} className={indentClass(level)}>
           <button
             onClick={() => handleClick(slug)}
             aria-controls={slug}
-            className={`text-left w-full transition-colors hover:text-foreground ${
+            className={`text-left w-full text-xs leading-relaxed py-0.5 pl-3 border-l-2 transition-[color,border-color] duration-200 ${
               activeSlug === slug
-                ? "text-accent font-medium"
-                : "text-muted-foreground"
+                ? "text-accent font-medium border-accent"
+                : "text-muted-foreground border-transparent hover:text-foreground hover:border-border"
             }`}
           >
             {text}
@@ -119,7 +119,7 @@ export function TableOfContents({ content }: { content: string }) {
       {/* Desktop sidebar */}
       <nav
         data-toc
-        className="hidden xl:block sticky top-8 max-h-[calc(100vh-4rem)] overflow-y-auto"
+        className="hidden lg:block sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto"
         aria-label="Оглавление"
       >
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
@@ -129,7 +129,7 @@ export function TableOfContents({ content }: { content: string }) {
       </nav>
 
       {/* Mobile collapsible */}
-      <details className="xl:hidden mb-6 border border-border rounded-lg">
+      <details className="lg:hidden border border-border rounded-lg">
         <summary className="px-4 py-3 text-sm font-medium cursor-pointer select-none">
           Оглавление
         </summary>

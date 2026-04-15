@@ -28,11 +28,21 @@
 - RSS-лента
 - Security: CSRF, rate-limit, ownership checks, `isBlocked`, `commentingBlocked`
 
+### UI/UX тестирование (Фазы 20–24)
+- Responsive layout: 375px, 768px, 1024px
+- Accessibility: skip-to-content, aria-labels, focus-visible, reduced motion
+- Визуальная консистентность: CSS-переменные, темы, hover/empty states
+
 ### Out of Scope
-- E2E автотесты (данный план — ручное тестирование)
 - Load / stress testing (нагрузочное)
 - CI/CD pipeline
 - Деплой на Vercel / Turso
+
+### Дополнительно (Фаза 17)
+- E2E автотесты (Playwright `@playwright/test`): критические пути P0–P1
+  - Команда: `npm run test:e2e` (требует запущенного `npm run dev:test`)
+  - Тесты: `testing/e2e/*.spec.ts`
+  - Отчёты: `testing/reports/playwright-html/`, индекс в `testing/reports/REPORT_LOG.md`
 
 ---
 
@@ -76,6 +86,7 @@
 - [ ] `npm run seed` выполнен, тестовые аккаунты созданы
 - [ ] Dev-сервер запущен (`npm run dev`)
 - [ ] `.env.local` содержит `SESSION_SECRET` и `ADMIN_PASSWORD_HASH`
+- [ ] CSS-переменные используются вместо hardcoded цветов (проверено design-watcher)
 
 ---
 
@@ -85,6 +96,8 @@
 - [ ] ≥ 90% P1 тест-кейсов прошли
 - [ ] Нет открытых критических багов (P0/P1 без workaround)
 - [ ] Smoke suite прошёл полностью
+- [ ] Responsive проверен на 375/768/1024px
+- [ ] Accessibility checklist пройден (TC-UI-001, TC-UI-008, TC-UI-010)
 
 ---
 
@@ -111,6 +124,7 @@
 | Тест-кейсы Автор | `testing/test-cases/TC-AUTHOR.md` |
 | Тест-кейсы Ревьюер | `testing/test-cases/TC-REVIEWER.md` |
 | Тест-кейсы Админ | `testing/test-cases/TC-ADMIN.md` |
+| Тест-кейсы UI/UX | `testing/test-cases/TC-UI.md` |
 | Smoke-набор | `testing/smoke/SMOKE-SUITE.md` |
 | Regression-набор | `testing/regression/REGRESSION-SUITE.md` |
 
@@ -125,8 +139,9 @@
 | Автор | US-A1..A20 | TC-AUTHOR.md | ~45 | P0–P2 |
 | Ревьюер | US-RV1..RV16 | TC-REVIEWER.md | ~35 | P0–P2 |
 | Админ | US-AD1..AD29 | TC-ADMIN.md | ~55 | P0–P2 |
-| Smoke | — | SMOKE-SUITE.md | 15 | P0 |
-| Regression | — | REGRESSION-SUITE.md | 30 | P0–P1 |
+| UI/UX | — | TC-UI.md | 15 | P0–P2 |
+| Smoke | — | SMOKE-SUITE.md | 18 | P0 |
+| Regression | — | REGRESSION-SUITE.md | 79 | P0–P1 |
 
 ---
 

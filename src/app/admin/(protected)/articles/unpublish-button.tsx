@@ -30,7 +30,7 @@ export default function UnpublishButton({ articleId }: { articleId: string }) {
     <button
       onClick={handleUnpublish}
       disabled={loading}
-      className="text-sm text-yellow-600 dark:text-yellow-400 hover:underline disabled:opacity-50"
+      className="text-sm text-warning hover:underline disabled:opacity-50"
     >
       {loading ? "..." : "Скрыть"}
     </button>

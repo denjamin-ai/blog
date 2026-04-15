@@ -100,7 +100,7 @@ export default function NewUserPage() {
           />
         </div>
 
-        {error && <p className="text-red-500 text-sm">{error}</p>}
+        {error && <p className="text-danger text-sm">{error}</p>}
 
         <div className="flex gap-3">
           <button

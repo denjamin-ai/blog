@@ -111,14 +111,29 @@ export default function ReviewerNotificationsPage() {
       {loading ? (
         <p className="text-muted-foreground text-sm">Загрузка...</p>
       ) : items.length === 0 ? (
-        <p className="text-muted-foreground text-sm">Нет уведомлений</p>
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <svg
+            viewBox="0 0 24 24"
+            className="w-12 h-12 text-muted-foreground/40 mb-4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+          </svg>
+          <p className="text-muted-foreground text-sm">Нет уведомлений</p>
+        </div>
       ) : (
         <div className="divide-y divide-border border border-border rounded-lg overflow-hidden">
           {unread.map((n) => (
             <button
               key={n.id}
               onClick={() => handleClick(n)}
-              className="w-full flex items-start gap-3 px-4 py-3 text-left bg-accent/20 hover:bg-accent/40 transition-colors"
+              className="w-full flex items-start gap-3 px-4 py-3 text-left bg-accent/5 hover:bg-accent/10 transition-colors"
             >
               <span className="mt-1.5 w-2 h-2 rounded-full bg-accent shrink-0" />
               <div className="flex-1 min-w-0">

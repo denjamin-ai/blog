@@ -2,9 +2,8 @@ import { db } from "@/lib/db";
 import { bookmarks, articles } from "@/lib/db/schema";
 import { requireUser } from "@/lib/auth";
 import { eq, desc } from "drizzle-orm";
-import Link from "next/link";
-import { parseTags } from "@/lib/utils";
-import { RemoveBookmarkButton } from "./remove-bookmark-button";
+import { ArticleCard } from "@/components/article-card";
+import { estimateReadingTime } from "@/lib/reading-time";
 
 export const dynamic = "force-dynamic";
 
@@ -13,13 +12,17 @@ export default async function BookmarksPage() {
 
   const rows = await db
     .select({
-      id: bookmarks.id,
-      createdAt: bookmarks.createdAt,
-      articleId: articles.id,
+      bookmarkId: bookmarks.id,
+      id: articles.id,
       slug: articles.slug,
       title: articles.title,
       excerpt: articles.excerpt,
       tags: articles.tags,
+      publishedAt: articles.publishedAt,
+      coverImageUrl: articles.coverImageUrl,
+      difficulty: articles.difficulty,
+      viewCount: articles.viewCount,
+      content: articles.content,
     })
     .from(bookmarks)
     .innerJoin(articles, eq(bookmarks.articleId, articles.id))
@@ -27,64 +30,47 @@ export default async function BookmarksPage() {
     .orderBy(desc(bookmarks.createdAt));
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-16">
-      <h1 className="text-3xl font-bold mb-8">Закладки</h1>
+    <div className="max-w-4xl mx-auto px-4 py-16">
+      <h1 className="font-display font-extrabold text-4xl tracking-tight mb-10">
+        Мои закладки
+      </h1>
 
       {rows.length === 0 ? (
-        <p className="text-muted-foreground">
-          Вы ещё не добавили статьи в закладки.{" "}
-          <Link href="/blog" className="text-accent hover:underline">
-            Перейти в блог
-          </Link>
-        </p>
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <svg
+            viewBox="0 0 24 24"
+            className="w-12 h-12 text-muted-foreground/40 mb-4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+          </svg>
+          <p className="text-muted-foreground">У вас пока нет закладок</p>
+        </div>
       ) : (
-        <div className="flex flex-col gap-6">
-          {rows.map((row) => {
-            const tags = parseTags(row.tags);
-            const addedDate = new Date(row.createdAt * 1000).toLocaleDateString(
-              "ru-RU",
-              {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              },
-            );
-
-            return (
-              <div
-                key={row.id}
-                className="flex flex-col gap-2 p-4 border border-border rounded-xl"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <Link
-                    href={`/blog/${row.slug}`}
-                    className="text-lg font-semibold hover:text-accent transition-colors"
-                  >
-                    {row.title}
-                  </Link>
-                  <RemoveBookmarkButton articleId={row.articleId} />
-                </div>
-
-                {row.excerpt && (
-                  <p className="text-sm text-muted-foreground line-clamp-2">
-                    {row.excerpt}
-                  </p>
-                )}
-
-                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                  <span>Добавлено {addedDate}</span>
-                  {tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="px-2 py-0.5 rounded-full bg-muted"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+          {rows.map((row, i) => (
+            <ArticleCard
+              key={row.bookmarkId}
+              index={i}
+              id={row.id}
+              slug={row.slug}
+              title={row.title}
+              excerpt={row.excerpt}
+              tags={row.tags}
+              publishedAt={row.publishedAt}
+              coverImageUrl={row.coverImageUrl}
+              difficulty={row.difficulty}
+              viewCount={row.viewCount}
+              readingTime={estimateReadingTime(row.content)}
+              bookmarked={true}
+              bookmarkCount={0}
+            />
+          ))}
         </div>
       )}
     </div>

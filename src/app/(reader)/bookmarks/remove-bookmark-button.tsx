@@ -25,7 +25,7 @@ export function RemoveBookmarkButton({ articleId }: { articleId: string }) {
     <button
       onClick={handleRemove}
       disabled={loading}
-      className="shrink-0 text-xs text-muted-foreground hover:text-red-500 transition-colors disabled:opacity-50"
+      className="shrink-0 text-xs text-muted-foreground hover:text-danger transition-colors disabled:opacity-50"
     >
       {loading ? "…" : "Убрать"}
     </button>

@@ -7,19 +7,17 @@ const VERDICT_CONFIG: Record<
   approved: {
     label: "Одобрено",
     icon: "✅",
-    className:
-      "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+    className: "bg-success-bg text-success",
   },
   needs_work: {
     label: "Требует доработки",
     icon: "⚠️",
-    className:
-      "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
+    className: "bg-warning-bg text-warning",
   },
   rejected: {
     label: "Отклонено",
     icon: "❌",
-    className: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+    className: "bg-danger-bg text-danger",
   },
 };
 

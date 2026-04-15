@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const rl = checkRateLimit(request);
+  const rl = checkRateLimit(request, "user-login");
   if (rl.blocked) {
     return NextResponse.json(
       { error: "Слишком много попыток. Попробуйте через 15 минут." },

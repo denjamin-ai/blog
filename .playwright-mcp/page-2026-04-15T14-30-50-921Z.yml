@@ -1,0 +1,73 @@
+- generic [active] [ref=e1]:
+  - link "Перейти к содержимому" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - navigation [ref=e3]:
+    - generic [ref=e4]:
+      - link "devblog" [ref=e5] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e6]:
+        - link "Блог" [ref=e7] [cursor=pointer]:
+          - /url: /blog
+        - button "Переключить на светлую тему" [ref=e8]:
+          - img [ref=e9]
+        - link "Войти" [ref=e15] [cursor=pointer]:
+          - /url: /login
+  - main [ref=e16]:
+    - progressbar "Прогресс чтения"
+    - generic [ref=e17]:
+      - link "← Назад к статьям" [ref=e18] [cursor=pointer]:
+        - /url: /blog
+      - generic [ref=e19]:
+        - article [ref=e20]:
+          - img "Тестовая статья с медиа" [ref=e22]
+          - generic [ref=e23]:
+            - heading "Тестовая статья с медиа" [level=1] [ref=e24]
+            - generic [ref=e25]:
+              - generic [ref=e26]: 15 апреля 2026 г.
+              - generic [ref=e27]: ·
+              - link "Тестовый Автор" [ref=e28] [cursor=pointer]:
+                - /url: /authors/test-author
+              - generic [ref=e29]: ·
+              - generic [ref=e30]: 1 мин чтения
+              - generic [ref=e31]: ·
+              - generic [ref=e32]: 1 просм.
+          - generic [ref=e33]:
+            - figure [ref=e36]
+            - figure [ref=e37]
+            - heading "Тестовая статья с медиа" [level=1] [ref=e38]
+            - paragraph [ref=e39]: Это статья для тестирования загрузки медиафайлов.
+            - paragraph [ref=e40]: "Медиа будет добавлено ниже:"
+          - generic [ref=e41]:
+            - generic [ref=e42]:
+              - button "Нравится" [ref=e43]:
+                - img [ref=e44]
+              - generic [ref=e46]: "0"
+              - button "Не нравится" [ref=e47]:
+                - img [ref=e48]
+            - button "В закладки" [ref=e50]:
+              - img [ref=e51]
+            - generic [ref=e54]:
+              - generic [ref=e55]: "Поделиться:"
+              - button "Поделиться в Telegram" [ref=e56] [cursor=pointer]: Telegram
+              - button "Поделиться ВКонтакте" [ref=e57] [cursor=pointer]: ВКонтакте
+              - button "Поделиться в X" [ref=e58] [cursor=pointer]: X
+              - button "Копировать ссылку" [ref=e59] [cursor=pointer]
+          - generic [ref=e60]:
+            - generic [ref=e61]: "Автор: Тестовый Автор"
+            - button "Подписаться" [ref=e62]
+        - complementary [ref=e63]
+      - generic [ref=e65]:
+        - heading "Комментарии" [level=2] [ref=e66]
+        - paragraph [ref=e67]: Загрузка…
+  - contentinfo [ref=e68]:
+    - generic [ref=e69]:
+      - paragraph [ref=e70]: © 2026 Denjamin
+      - generic [ref=e71]:
+        - link "GitHub" [ref=e72] [cursor=pointer]:
+          - /url: https://github.com/denjamin
+        - link "RSS-фид" [ref=e73] [cursor=pointer]:
+          - /url: /feed.xml
+          - img [ref=e74]
+  - button "Open Next.js Dev Tools" [ref=e82] [cursor=pointer]:
+    - img [ref=e83]
+  - alert [ref=e86]

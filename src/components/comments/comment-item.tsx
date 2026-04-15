@@ -91,8 +91,8 @@ function CommentVoting({
 
   const btnBase =
     "flex items-center justify-center w-5 h-5 rounded transition-colors";
-  const activeUp = "text-emerald-600 dark:text-emerald-400";
-  const activeDown = "text-rose-600 dark:text-rose-400";
+  const activeUp = "text-success";
+  const activeDown = "text-danger";
   const idle =
     "text-muted-foreground hover:text-foreground disabled:opacity-40";
 
@@ -103,6 +103,7 @@ function CommentVoting({
         disabled={loading}
         className={`${btnBase} ${userVote === 1 ? activeUp : idle}`}
         title="Нравится"
+        aria-label="Нравится"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -125,6 +126,7 @@ function CommentVoting({
         disabled={loading}
         className={`${btnBase} ${userVote === -1 ? activeDown : idle}`}
         title="Не нравится"
+        aria-label="Не нравится"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -245,7 +247,7 @@ export function CommentItem({
                 className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-accent text-sm resize-none"
                 disabled={editSaving}
               />
-              {editError && <p className="text-xs text-red-500">{editError}</p>}
+              {editError && <p className="text-xs text-danger">{editError}</p>}
               <div className="flex gap-2">
                 <button
                   onClick={handleSaveEdit}
@@ -295,7 +297,7 @@ export function CommentItem({
                 <button
                   onClick={handleDelete}
                   disabled={deleteLoading}
-                  className="text-xs text-muted-foreground hover:text-red-500 transition-colors disabled:opacity-50"
+                  className="text-xs text-muted-foreground hover:text-danger transition-colors disabled:opacity-50"
                 >
                   {deleteLoading ? "Удаление…" : "Удалить"}
                 </button>
@@ -334,7 +336,7 @@ export function CommentItem({
       )}
 
       {node.replies.length > 0 && (
-        <div className="ml-4 pl-3 border-l-2 border-border flex flex-col gap-4 mt-2">
+        <div className="ml-2 pl-2 sm:ml-4 sm:pl-3 border-l-2 border-border flex flex-col gap-4 mt-2">
           {node.replies.map((reply) => (
             <CommentItem
               key={reply.id}

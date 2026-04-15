@@ -165,7 +165,7 @@ export default function AuthorProfilePage() {
                 <button
                   type="button"
                   onClick={() => setAvatarUrl("")}
-                  className="text-xs text-red-500 hover:opacity-70 mt-1 block"
+                  className="text-xs text-danger hover:opacity-70 mt-1 block"
                 >
                   Удалить аватар
                 </button>
@@ -177,7 +177,7 @@ export default function AuthorProfilePage() {
         {/* Отображаемое имя */}
         <div>
           <label className="block text-sm font-medium mb-1">
-            Отображаемое имя <span className="text-red-500">*</span>
+            Отображаемое имя <span className="text-danger">*</span>
           </label>
           <input
             type="text"
@@ -273,12 +273,8 @@ export default function AuthorProfilePage() {
           </div>
         </div>
 
-        {error && <p className="text-red-500 text-sm">{error}</p>}
-        {success && (
-          <p className="text-green-600 dark:text-green-400 text-sm">
-            Профиль сохранён
-          </p>
-        )}
+        {error && <p className="text-danger text-sm">{error}</p>}
+        {success && <p className="text-success text-sm">Профиль сохранён</p>}
 
         <button
           type="submit"

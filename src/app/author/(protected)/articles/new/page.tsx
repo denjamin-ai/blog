@@ -62,6 +62,7 @@ export default function AuthorNewArticlePage() {
           <label className="block text-sm font-medium mb-1">Заголовок</label>
           <input
             type="text"
+            name="title"
             value={title}
             onChange={(e) => {
               setTitle(e.target.value);
@@ -125,7 +126,7 @@ export default function AuthorNewArticlePage() {
           />
         </div>
 
-        {error && <p className="text-red-500 text-sm">{error}</p>}
+        {error && <p className="text-danger text-sm">{error}</p>}
 
         <div className="flex gap-3">
           <button

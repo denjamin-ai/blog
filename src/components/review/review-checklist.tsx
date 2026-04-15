@@ -37,6 +37,7 @@ export function ReviewChecklist({ assignmentId, readOnly = false }: Props) {
 
   async function handleToggle(index: number) {
     if (readOnly || saving !== null) return;
+    const prev = [...items];
     const next = items.map((item, i) =>
       i === index ? { ...item, checked: !item.checked } : item,
     );
@@ -50,7 +51,7 @@ export function ReviewChecklist({ assignmentId, readOnly = false }: Props) {
       });
     } catch {
       // rollback on error
-      setItems(items);
+      setItems(prev);
     } finally {
       setSaving(null);
     }

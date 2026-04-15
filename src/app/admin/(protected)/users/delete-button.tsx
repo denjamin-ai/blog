@@ -35,7 +35,7 @@ export default function DeleteUserButton({ id, name }: DeleteUserButtonProps) {
     <button
       onClick={handleDelete}
       disabled={deleting}
-      className="text-sm text-red-500 hover:underline disabled:opacity-50"
+      className="text-sm text-danger hover:underline disabled:opacity-50"
     >
       {deleting ? "Удаление..." : "Удалить"}
     </button>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 interface Props {
@@ -18,6 +18,17 @@ export function BookmarkButton({
   const [count, setCount] = useState(initialCount);
   const [loading, setLoading] = useState(false);
   const [notAuthed, setNotAuthed] = useState(false);
+  const [pop, setPop] = useState(false);
+  const prevBookmarked = useRef(initialBookmarked);
+
+  useEffect(() => {
+    if (bookmarked && !prevBookmarked.current) {
+      setPop(true);
+      const t = setTimeout(() => setPop(false), 300);
+      return () => clearTimeout(t);
+    }
+    prevBookmarked.current = bookmarked;
+  }, [bookmarked]);
 
   async function handleClick() {
     if (loading) return;
@@ -61,13 +72,13 @@ export function BookmarkButton({
       onClick={handleClick}
       disabled={loading}
       title={bookmarked ? "Убрать из закладок" : "В закладки"}
+      aria-label={bookmarked ? "Убрать из закладок" : "В закладки"}
       className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 24 24"
-        className="w-4 h-4"
-        fill={bookmarked ? "currentColor" : "none"}
+        className={`w-4 h-4 transition-[fill] duration-200 ${bookmarked ? "fill-current" : "fill-none"} ${pop ? "motion-safe:animate-[bookmark-pop_0.3s_ease-out]" : ""}`}
         stroke="currentColor"
         strokeWidth={2}
         strokeLinecap="round"

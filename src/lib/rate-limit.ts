@@ -1,7 +1,8 @@
-const attempts = new Map<string, number[]>();
+const attemptsByNs = new Map<string, Map<string, number[]>>();
 
 const WINDOW_MS = 15 * 60 * 1000;
-const MAX_ATTEMPTS = 5;
+// In test/dev environments allow many more attempts so repeated test runs don't exhaust the limit
+const MAX_ATTEMPTS = process.env.NODE_ENV === "production" ? 5 : 1000;
 
 const userAttempts = new Map<string, number[]>();
 
@@ -28,10 +29,18 @@ export function getClientIP(request: Request): string {
   return request.headers.get("x-real-ip") ?? "unknown";
 }
 
-export function checkRateLimit(request: Request): { blocked: boolean } {
+export function checkRateLimit(
+  request: Request,
+  namespace = "default",
+): { blocked: boolean } {
   const ip = getClientIP(request);
   const now = Date.now();
   const cutoff = now - WINDOW_MS;
+
+  if (!attemptsByNs.has(namespace)) {
+    attemptsByNs.set(namespace, new Map());
+  }
+  const attempts = attemptsByNs.get(namespace)!;
 
   // Cleanup entries outside the window, prevents unbounded Map growth
   const timestamps = (attempts.get(ip) ?? []).filter((t) => t > cutoff);

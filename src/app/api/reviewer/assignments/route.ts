@@ -1,12 +1,18 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { reviewAssignments, articles } from "@/lib/db/schema";
-import { requireUser } from "@/lib/auth";
+import { requireUser, getSession } from "@/lib/auth";
 import { eq, desc } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  // Явная проверка: admin не имеет доступа к этому эндпоинту (только reviewer)
+  const raw = await getSession();
+  if (raw.isAdmin) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   let session;
   try {
     session = await requireUser("reviewer");

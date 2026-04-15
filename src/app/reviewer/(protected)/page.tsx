@@ -67,9 +67,11 @@ export default async function ReviewerDashboard() {
           <Link
             key={stat.label}
             href={stat.href}
-            className="p-6 border border-border rounded-lg hover:bg-muted/50 transition-colors"
+            className="p-5 bg-elevated border border-border rounded-xl hover:bg-muted/50 transition-colors"
           >
-            <div className="text-3xl font-bold mb-1">{stat.value}</div>
+            <div className="text-3xl font-display font-bold mb-1">
+              {stat.value}
+            </div>
             <div className="text-sm text-muted-foreground">{stat.label}</div>
           </Link>
         ))}
