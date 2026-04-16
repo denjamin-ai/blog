@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { articles, users, reviewAssignments } from "@/lib/db/schema";
-import { desc, eq, and } from "drizzle-orm";
+import { desc, eq, and, inArray } from "drizzle-orm";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import UnpublishButton from "./unpublish-button";
@@ -53,25 +53,32 @@ export default async function AdminArticlesPage({
     ? allArticles.filter((a) => a.status === filter)
     : allArticles;
 
-  // Fetch latest completed assignment verdict per article
+  // Fetch latest completed assignment verdict per article (single batch query)
   const verdictMap: Record<string, string | null> = {};
-  await Promise.all(
-    filtered.map(async (article) => {
-      const latest = await db
-        .select({ verdict: reviewAssignments.verdict })
-        .from(reviewAssignments)
-        .where(
-          and(
-            eq(reviewAssignments.articleId, article.id),
-            eq(reviewAssignments.status, "completed"),
-          ),
-        )
-        .orderBy(desc(reviewAssignments.updatedAt))
-        .limit(1)
-        .get();
-      verdictMap[article.id] = latest?.verdict ?? null;
-    }),
-  );
+  if (filtered.length > 0) {
+    const articleIds = filtered.map((a) => a.id);
+    const allVerdicts = await db
+      .select({
+        articleId: reviewAssignments.articleId,
+        verdict: reviewAssignments.verdict,
+        updatedAt: reviewAssignments.updatedAt,
+      })
+      .from(reviewAssignments)
+      .where(
+        and(
+          inArray(reviewAssignments.articleId, articleIds),
+          eq(reviewAssignments.status, "completed"),
+        ),
+      )
+      .orderBy(desc(reviewAssignments.updatedAt));
+
+    // Keep only the latest verdict per article
+    for (const row of allVerdicts) {
+      if (!(row.articleId in verdictMap)) {
+        verdictMap[row.articleId] = row.verdict ?? null;
+      }
+    }
+  }
 
   return (
     <div>

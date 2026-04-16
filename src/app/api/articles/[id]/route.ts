@@ -7,6 +7,7 @@ import {
   reviewAssignments,
   reviewChecklists,
   subscriptions,
+  bookmarks,
   users,
   notifications,
   profile,
@@ -541,31 +542,43 @@ export async function PUT(
     }
   }
 
-  // Уведомить подписчиков при обновлении уже опубликованной статьи
-  if (wasPublished && saveMode === "publish" && existing.authorId) {
-    const authorUser = await db
-      .select({ name: users.name })
-      .from(users)
-      .where(eq(users.id, existing.authorId))
-      .get();
+  // Уведомить подписчиков и читателей с закладками при обновлении опубликованной статьи
+  if (wasPublished && saveMode === "publish") {
+    const articleTitle = typeof title === "string" ? title : existing.title;
 
-    const subs = await db
-      .select({ userId: subscriptions.userId })
-      .from(subscriptions)
-      .where(eq(subscriptions.authorId, existing.authorId));
+    // Подписчики на автора (только если статья принадлежит автору)
+    let authorName = "";
+    const subsSet = new Set<string>();
+    if (existing.authorId) {
+      const authorUser = await db
+        .select({ name: users.name })
+        .from(users)
+        .where(eq(users.id, existing.authorId))
+        .get();
+      authorName = authorUser?.name ?? "";
 
-    if (subs.length > 0) {
-      const articleTitle = typeof title === "string" ? title : existing.title;
-      const notifValues = subs.map((sub) => ({
+      const subs = await db
+        .select({ userId: subscriptions.userId })
+        .from(subscriptions)
+        .where(eq(subscriptions.authorId, existing.authorId));
+      for (const sub of subs) subsSet.add(sub.userId);
+    }
+
+    // Читатели, добавившие статью в закладки
+    const bookmarkRows = await db
+      .select({ userId: bookmarks.userId })
+      .from(bookmarks)
+      .where(eq(bookmarks.articleId, id));
+    for (const bm of bookmarkRows) subsSet.add(bm.userId);
+
+    if (subsSet.size > 0) {
+      const payload = JSON.stringify({ articleId: id, articleTitle, authorName });
+      const notifValues = Array.from(subsSet).map((userId) => ({
         id: ulid(),
-        recipientId: sub.userId,
+        recipientId: userId,
         isAdminRecipient: 0,
         type: "article_updated_for_subscribers" as const,
-        payload: JSON.stringify({
-          articleId: id,
-          articleTitle,
-          authorName: authorUser?.name ?? "",
-        }),
+        payload,
         isRead: 0,
         createdAt: now,
       }));

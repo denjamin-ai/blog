@@ -60,7 +60,7 @@ export default function ReviewerPickerModal({
       setError("");
       try {
         const res = await fetch(
-          `/api/admin/users?role=reviewer&search=${encodeURIComponent(query.trim())}`,
+          `/api/reviewers?search=${encodeURIComponent(query.trim())}`,
         );
         if (!res.ok) {
           setError("Ошибка поиска");

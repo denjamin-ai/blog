@@ -109,6 +109,10 @@ interface SessionData {
 
 **Admin users**: `/admin/users` — CRUD for all user accounts. `PATCH /api/admin/users/[id]` toggles `isBlocked` (hides all author articles) and `commentingBlocked` (blocks comments/votes). `POST /api/admin/users` creates users; no self-registration exists.
 
+**Admin visibility toggle**: `PATCH /api/admin/articles/[id]/visibility` — quick hide/show without editing content. Body: `{ action: "hide" | "show" }`. Hide sets `status=draft` + clears `scheduledAt`; show sets `status=published`, preserves original `publishedAt`.
+
+**MDX preview**: `POST /api/preview` — compiles MDX to HTML for the live editor preview. Auth: admin or author only. Body: `{ content: string }` (max 100KB). Returns `{ html: string }`. Uses a custom `remarkMdxDiagramsToHtml()` remark plugin that converts Mermaid/Diagram/Circuit/ArticleImage/ArticleVideo JSX nodes to placeholder HTML.
+
 ### Review workflow
 - Admin sends article for review → creates `reviewAssignment` (status=`pending`) + notifies reviewer; copies `profile.checklistTemplate` into `reviewChecklists`
 - Reviewer accepts/declines/completes → status transitions + notifies admin
@@ -199,10 +203,11 @@ Layout calls `requireUser("reviewer")`. All `/api/reviewer/*` routes enforce `se
 
 ### MDX (`src/lib/mdx.ts`)
 - `compileMDX(source)` — compiles MDX string with custom component map
-- `Expandable` is the **only** component registered in `mdxComponents`
+- **Registered MDX components**: `Expandable`, `Mermaid`, `Diagram`, `Circuit`, `ArticleImage`, `ArticleVideo` — all registered in `mdxComponents`
 - `CodeCopyButtons` (`src/components/mdx/copy-button.tsx`) is a standalone client component rendered directly in article pages; attaches copy buttons to `[data-rehype-pretty-code-figure]` elements via DOM `useEffect`
 - **LaTeX math**: `remark-math` + `rehype-katex` in the MDX pipeline — use `$inline$` and `$$block$$` syntax
-- **Mermaid diagrams**: `mermaid` package — client-side rendering via lazy-loaded component
+- **Mermaid diagrams**: client-side rendering via lazy-loaded `Mermaid` component, theme-aware (`dark`/`default`)
+- **Kroki diagrams** (`Diagram`, `Circuit`): server-rendered via the cloud Kroki service — supports PlantUML, BPMN, WaveDrom, Graphviz, D2, TikZ
 - **Video**: `fluent-ffmpeg` + `ffprobe` installed for server-side video processing
 - **Heading anchors**: `rehype-slug` adds `id` attributes to headings for deep links
 
@@ -252,6 +257,15 @@ Layout calls `requireUser("reviewer")`. All `/api/reviewer/*` routes enforce `se
 - `BookmarkButton` — CSS fill-анимация `bookmark-pop`
 - `NotificationBadge` — `pulse-badge` анимация
 - `ThemeToggle` — `spin-in` анимация
+- `TableOfContents` — клиентский компонент, парсит H2–H4 из контента статьи. Intersection Observer (60% rootMargin) подсвечивает активный заголовок. Desktop: sticky sidebar; mobile: `<details>`. Обрабатывает дубли slug-ов счётчиком.
+- `ShareButton` — кнопки шаринга в Telegram, VK, X (Twitter). Диалог открывается в popup 600×400. Clipboard API проверяется после mount (избегает SSR mismatch).
+
+### Редактор статей
+- `EditorWithPreview` (`src/components/editor-with-preview.tsx`) — двухпанельный MDX-редактор. Расположение превью: `right | left | bottom | none`, сохраняется в localStorage.
+- `DiagramInserter` (`src/components/diagram-inserter.tsx`) — модалка для вставки диаграмм: Mermaid (flowchart, sequence, class, state, ER, Gantt, pie, mindmap, timeline, gitgraph) и Kroki (PlantUML, BPMN, WaveDrom, Graphviz, D2, TikZ).
+- `FormulaInserter` (`src/components/formula-inserter.tsx`) — модалка для LaTeX: тулбар быстрых символов, toggle inline/block, live KaTeX preview.
+- `useArticleEditor` hook — управляет позицией курсора в textarea, загрузкой медиа через XHR с отслеживанием прогресса, состоянием превью медиа.
+- `useLocalStorageDraft` hook — сохраняет черновики редактора в localStorage.
 
 ### Accessibility
 - Skip-to-content: `<a href="#main-content">` в `layout.tsx`, `<main tabIndex={-1}>` для фокуса
