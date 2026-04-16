@@ -195,7 +195,7 @@ Layout calls `requireUser("reviewer")`. All `/api/reviewer/*` routes enforce `se
 - `rate-limit.ts` — `checkUserRateLimit(userId, windowMs, max)` for engagement; `checkRateLimit(ip, ...)` for admin login — in-memory `Map`, auto-cleanup
 - `diff.ts` — `computeDiff()` used by diff endpoints to compare article version snapshots
 - `reading-time.ts` — `estimateReadingTime(mdx)`: 200 wpm, code blocks count as 0.5 min each, minimum 1 min
-- `utils.ts` — `parseTags(json)`, `mdxToPlainText(src, maxLen?)` (strips code/links for excerpts), `parseLinks(json)`
+- `utils.ts` — `parseTags(json)`, `mdxToPlainText(src, maxLen?)` (strips code/links/HTML+JSX tags for excerpts — use for SEO description), `parseLinks(json)`
 
 ### MDX (`src/lib/mdx.ts`)
 - `compileMDX(source)` — compiles MDX string with custom component map
@@ -274,6 +274,8 @@ Layout calls `requireUser("reviewer")`. All `/api/reviewer/*` routes enforce `se
 - `requireUser()` throws a `NextResponse` object (not a plain Error) when role doesn't match — callers must `return` it or it won't terminate the handler
 - `coverImageUrl` is validated server-side to start with `/uploads/` — prevents storing arbitrary external URLs
 - Engagement toggle endpoints (votes, bookmarks, subscriptions) use `db.transaction()` — the DB has `uniqueIndex` constraints as a safety net; a constraint violation means a bug in the toggle logic
+- Author article editor: `cursorPosRef` must be initialized to `content.length` after `setContent()` in `loadArticle` — otherwise media/formula insertion defaults to position 0 (start of content) until the user clicks in the textarea
+- `mdxToPlainText()` strips HTML and JSX tags (e.g. `<ArticleImage>`) — always use it for SEO meta descriptions, never raw MDX content
 
 ## Claude Code Rules (`.claude/rules/`)
 - `security.md` — always-on: secrets, auth, XSS, input validation

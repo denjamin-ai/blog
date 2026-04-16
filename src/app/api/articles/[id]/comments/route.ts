@@ -113,8 +113,10 @@ export async function GET(
   const allCommentIds = allRows.map((c) => c.id);
 
   // Голоса: рейтинг и голос текущего пользователя
-  let votesByComment: Map<string, { rating: number; userVote: 1 | -1 | null }> =
-    new Map();
+  const votesByComment: Map<
+    string,
+    { rating: number; userVote: 1 | -1 | null }
+  > = new Map();
 
   if (allCommentIds.length > 0) {
     const allVotes = await db

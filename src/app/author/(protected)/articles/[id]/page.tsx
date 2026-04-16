@@ -6,9 +6,8 @@ import Link from "next/link";
 import ReviewerPickerModal from "@/components/reviewer-picker-modal";
 import { DiffPreviewModal } from "@/components/review/diff-preview-modal";
 import { useLocalStorageDraft } from "@/hooks/useLocalStorageDraft";
-import { FormulaInserter } from "@/components/formula-inserter";
-import { DiagramInserter } from "@/components/diagram-inserter";
 import { EditorWithPreview } from "@/components/editor-with-preview";
+import { useArticleEditor } from "@/hooks/useArticleEditor";
 
 interface Assignment {
   id: string;
@@ -72,15 +71,7 @@ export default function AuthorEditArticlePage() {
   const [uploadError, setUploadError] = useState("");
   const [showPreview, setShowPreview] = useState(false);
   const [showDiffPreview, setShowDiffPreview] = useState(false);
-  const [uploadingMedia, setUploadingMedia] = useState(false);
-  const [mediaUploadProgress, setMediaUploadProgress] = useState(0);
-  const [mediaUploadError, setMediaUploadError] = useState("");
-  const [mediaPreview, setMediaPreview] = useState<{
-    url: string;
-    type: "image" | "video";
-    name: string;
-    duration?: number;
-  } | null>(null);
+  const editor = useArticleEditor(content, setContent);
 
   const loadAssignments = useCallback(async () => {
     try {
@@ -118,6 +109,7 @@ export default function AuthorEditArticlePage() {
       setTagsInput("");
     }
     setContent(data.content);
+    editor.cursorPosRef.current = data.content?.length ?? 0;
     setStatus(data.status);
     setUpdatedAt(data.updatedAt);
     setCoverImageUrl(data.coverImageUrl ?? null);
@@ -141,10 +133,6 @@ export default function AuthorEditArticlePage() {
   useEffect(() => {
     loadArticle();
   }, [loadArticle]);
-
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const cursorPosRef = useRef<number>(0);
-  const mediaFileInputRef = useRef<HTMLInputElement>(null);
 
   // Ref для доступа к актуальным значениям формы из интервала автосохранения
   const formDataRef = useRef({ title, content, excerpt });
@@ -360,76 +348,6 @@ export default function AuthorEditArticlePage() {
       setUploadingCover(false);
       e.target.value = "";
     }
-  }
-
-  function insertMediaTag(url: string, type: "image" | "video") {
-    const tag =
-      type === "image"
-        ? `<ArticleImage src="${url}" alt="" />`
-        : `<ArticleVideo src="${url}" />`;
-    const pos = cursorPosRef.current;
-    setContent(
-      (prev) => prev.slice(0, pos) + "\n" + tag + "\n" + prev.slice(pos),
-    );
-    setMediaPreview(null);
-  }
-
-  function insertFormulaAtCursor(text: string) {
-    const pos = cursorPosRef.current;
-    setContent(
-      (prev) => prev.slice(0, pos) + "\n" + text + "\n" + prev.slice(pos),
-    );
-  }
-
-  async function handleMediaUpload(file: File) {
-    setUploadingMedia(true);
-    setMediaUploadProgress(0);
-    setMediaUploadError("");
-    setMediaPreview(null);
-
-    const formData = new FormData();
-    formData.append("file", file);
-
-    await new Promise<void>((resolve) => {
-      const xhr = new XMLHttpRequest();
-      xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable) {
-          setMediaUploadProgress(Math.round((e.loaded / e.total) * 100));
-        }
-      };
-      xhr.onload = () => {
-        let data: {
-          url?: string;
-          type?: string;
-          duration?: number;
-          error?: string;
-        } = {};
-        try {
-          data = JSON.parse(xhr.responseText);
-        } catch {
-          // ignore parse error
-        }
-        if (xhr.status === 200 && data.url) {
-          setMediaPreview({
-            url: data.url,
-            type: (data.type as "image" | "video") ?? "image",
-            name: file.name,
-            duration: data.duration,
-          });
-        } else {
-          setMediaUploadError(data.error ?? "Ошибка загрузки");
-        }
-        resolve();
-      };
-      xhr.onerror = () => {
-        setMediaUploadError("Ошибка сети");
-        resolve();
-      };
-      xhr.open("POST", "/api/upload");
-      xhr.send(formData);
-    });
-
-    setUploadingMedia(false);
   }
 
   async function handlePreview() {
@@ -722,90 +640,75 @@ export default function AuthorEditArticlePage() {
       <div className="my-4">
         <EditorWithPreview
           value={content}
-          diagramInserter={<DiagramInserter onInsert={insertFormulaAtCursor} />}
-          formulaInserter={<FormulaInserter onInsert={insertFormulaAtCursor} />}
+          onDiagramInsert={editor.insertAtCursor}
+          onFormulaInsert={editor.insertAtCursor}
+          onMediaClick={() => editor.mediaFileInputRef.current?.click()}
+          uploadingMedia={editor.uploadingMedia}
         >
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="block text-sm font-medium">Контент (MDX)</label>
-              <button
-                type="button"
-                onClick={() => mediaFileInputRef.current?.click()}
-                disabled={uploadingMedia}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-accent/10 text-accent border border-accent/30 rounded-lg hover:bg-accent/20 transition-colors disabled:opacity-50"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="17 8 12 3 7 8" />
-                  <line x1="12" y1="3" x2="12" y2="15" />
-                </svg>
-                {uploadingMedia ? "Загрузка..." : "Добавить медиа"}
-              </button>
-              <input
-                ref={mediaFileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp,video/mp4,video/webm"
-                className="hidden"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) handleMediaUpload(f);
-                  e.target.value = "";
-                }}
-              />
-            </div>
+            <label className="block text-sm font-medium mb-1">
+              Контент (MDX)
+            </label>
 
-            {uploadingMedia && (
+            <input
+              ref={editor.mediaFileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,video/mp4,video/webm"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) editor.handleMediaUpload(f);
+                e.target.value = "";
+              }}
+            />
+
+            {editor.uploadingMedia && (
               <div className="mb-2 h-1 rounded-full bg-border overflow-hidden">
                 <div
                   className="h-full bg-accent transition-all duration-150"
-                  style={{ width: `${mediaUploadProgress}%` }}
+                  style={{ width: `${editor.mediaUploadProgress}%` }}
                 />
               </div>
             )}
 
-            {mediaUploadError && (
-              <p className="text-xs text-danger mb-2">{mediaUploadError}</p>
+            {editor.mediaUploadError && (
+              <p className="text-xs text-danger mb-2">
+                {editor.mediaUploadError}
+              </p>
             )}
 
-            {mediaPreview && (
+            {editor.mediaPreview && (
               <div className="mb-2 p-3 border border-border rounded-lg flex items-start gap-3 bg-muted/30">
-                {mediaPreview.type === "image" ? (
+                {editor.mediaPreview.type === "image" ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={mediaPreview.url}
+                    src={editor.mediaPreview.url}
                     alt=""
                     className="w-20 h-14 object-cover rounded flex-shrink-0"
                   />
                 ) : (
                   <video
-                    src={mediaPreview.url}
+                    src={editor.mediaPreview.url}
                     className="w-20 h-14 object-cover rounded flex-shrink-0"
                   />
                 )}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-foreground truncate">
-                    {mediaPreview.name}
+                    {editor.mediaPreview.name}
                   </p>
-                  {mediaPreview.duration !== undefined && (
+                  {editor.mediaPreview.duration !== undefined && (
                     <p className="text-xs text-muted-foreground">
-                      {Math.round(mediaPreview.duration)} сек
+                      {Math.round(editor.mediaPreview.duration)} сек
                     </p>
                   )}
                 </div>
                 <button
                   type="button"
                   onClick={() =>
-                    insertMediaTag(mediaPreview.url, mediaPreview.type)
+                    editor.insertMediaTag(
+                      editor.mediaPreview!.url,
+                      editor.mediaPreview!.type,
+                    )
                   }
                   className="px-3 py-1 bg-accent text-accent-foreground rounded-lg text-xs font-medium hover:opacity-90 transition-opacity flex-shrink-0"
                 >
@@ -813,7 +716,7 @@ export default function AuthorEditArticlePage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setMediaPreview(null)}
+                  onClick={() => editor.setMediaPreview(null)}
                   className="text-muted-foreground hover:text-foreground transition-colors text-sm flex-shrink-0"
                   aria-label="Закрыть превью"
                 >
@@ -827,25 +730,16 @@ export default function AuthorEditArticlePage() {
               onDrop={(e) => {
                 e.preventDefault();
                 const f = e.dataTransfer.files?.[0];
-                if (f) handleMediaUpload(f);
+                if (f) editor.handleMediaUpload(f);
               }}
             >
               <textarea
-                ref={textareaRef}
+                ref={editor.textareaRef}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                onSelect={() => {
-                  cursorPosRef.current =
-                    textareaRef.current?.selectionStart ?? content.length;
-                }}
-                onKeyUp={() => {
-                  cursorPosRef.current =
-                    textareaRef.current?.selectionStart ?? content.length;
-                }}
-                onClick={() => {
-                  cursorPosRef.current =
-                    textareaRef.current?.selectionStart ?? content.length;
-                }}
+                onSelect={editor.trackCursor}
+                onKeyUp={editor.trackCursor}
+                onClick={editor.trackCursor}
                 rows={20}
                 className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-accent font-mono text-sm"
               />

@@ -14,9 +14,8 @@ disallowedTools:
   - Bash
 model: haiku
 maxTurns: 15
-memory: none
 effort: medium
-color: green
+color: orange
 ---
 
 # Роль

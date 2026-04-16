@@ -17,10 +17,10 @@ import { getSession } from "@/lib/auth";
 function remarkMdxDiagramsToHtml() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (tree: any) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     visit(
       tree,
       "mdxJsxFlowElement",
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (node: any, index: number | undefined, parent: any) => {
         if (!parent || index == null) return;
         const name: string = node.name;
@@ -36,7 +36,6 @@ function remarkMdxDiagramsToHtml() {
           return;
 
         function getAttr(attrName: string): string {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const attr = node.attributes?.find(
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (a: any) => a.type === "mdxJsxAttribute" && a.name === attrName,

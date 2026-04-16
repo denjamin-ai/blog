@@ -48,3 +48,7 @@ next-env.d.ts
 *.db
 *.db-journal
 *.db-wal
+*.db-shm
+
+# playwright mcp logs
+.playwright-mcp/

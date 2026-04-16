@@ -1,53 +1,125 @@
-# REPORT_UI_FINAL — Повторный smoke после фиксов
+# REPORT_UI_FINAL — Финальный smoke + UI (Фаза 25)
 
-**Дата:** 2026-04-15
-**Стенд:** http://localhost:3001
-**Тестировщик:** playwright-tester (автоматический)
+**Дата:** 2026-04-15  
+**Стенд:** http://localhost:3001  
+**Тестировщик:** playwright-tester (автоматический)  
+**Сборка:** npm run build ✅
 
-## Исправления перед повторным прогоном
-1. P0: Удалён onClick в Server Component (`article-card.tsx:153`)
-2. P2: Добавлен `tabIndex={-1}` на `<main>` для skip-link focus
-3. HIGH SEO: Восстановлен `generateMetadata()` в `page.tsx`
-4. P0: Auto-create initial `articleVersion` при первом комментарии
+---
 
-## Результаты
+## Фаза 25: Основные фиксы
 
-### Smoke (SMOKE-001 — SMOKE-018)
+### 25fixes — Баг дублирования медиа (первопричина)
+
+| Файл | Изменение |
+|------|-----------|
+| `src/app/author/(protected)/articles/[id]/page.tsx` | `cursorPosRef.current = data.content?.length ?? 0` после загрузки — медиа вставляется в конец, не в начало |
+| `src/app/author/(protected)/articles/new/page.tsx` | Убран `# Заголовок` из placeholder textarea — предотвращает дублирование заголовка в MDX |
+
+---
+
+## Тесты 1–7 (медиа + обложка + аватар)
+
+| # | Тест | Статус | Комментарий |
+|---|------|--------|-------------|
+| 1 | Медиа при создании статьи (author) | ✅ PASS | Тег вставляется в конец контента |
+| 2 | Медиа при редактировании (author) | ✅ PASS | cursorPosRef инициализирован = content.length |
+| 3 | Медиа у ревьюера | ✅ PASS | title → text → media, без дублирования |
+| 4 | Медиа у гостя | ✅ PASS | Публичная страница корректна |
+| 5 | Медиа у читателя | ✅ PASS | Идентично гостю |
+| 6 | Обложка статьи (cover.png) | ✅ PASS | Отображается на публичной странице статьи |
+| 7 | Аватар автора (big_author_photo.jpg) | ✅ PASS | Отображается на /authors/test-author |
+
+---
+
+## Smoke (SMOKE-001 — SMOKE-018)
 
 | Тест | Статус | Комментарий |
 |------|--------|-------------|
-| SMOKE-001 | ✅ | `/` → 200, главная загружается |
-| SMOKE-002 | ✅ | `/blog` → 200, 3 карточки статей |
-| SMOKE-003 | ✅ | `/blog/[slug]` → 200, MDX-контент, progressbar |
-| SMOKE-004 | ✅ | reader/password → /reader |
-| SMOKE-005 | ✅ | author/password → /author |
-| SMOKE-006 | ✅ | reviewer/password → /reviewer |
-| SMOKE-007 | ✅ | admin/dhome$32 → /admin |
-| SMOKE-008 | ✅ | Защита роутов: 307 без сессии |
-| SMOKE-009 | ✅ | Logout → редирект |
-| SMOKE-010 | ✅ | GET /api/articles → 200 JSON |
+| SMOKE-001 | ✅ | / → HTTP 200, no JS errors |
+| SMOKE-002 | ✅ | /blog → 200, карточки видны |
+| SMOKE-003 | ✅ | /blog/test-media-insert → 200, контент виден |
+| SMOKE-004 | ✅ | reader/password → role=reader |
+| SMOKE-005 | ✅ | author/password → role=author |
+| SMOKE-006 | ✅ | reviewer/password → role=reviewer |
+| SMOKE-007 | ✅ | admin/dhome$32 → ok |
+| SMOKE-008 | ✅ | /admin, /author, /reviewer без сессии → redirect |
+| SMOKE-009 | ✅ | DELETE /api/auth → session cleared |
+| SMOKE-010 | ✅ | GET /api/articles (authed) → 200, array |
 | SMOKE-011 | ✅ | /feed.xml → 200, RSS XML |
-| SMOKE-012 | ✅ | POST /api/articles → 201, удалён |
-| SMOKE-013 | ✅ | POST /api/upload → 200, /uploads/... |
+| SMOKE-012 | ✅ | POST /api/articles (draft) → 201, DELETE → 200 |
+| SMOKE-013 | ✅ | POST /api/upload (admin) → 200, /uploads/... |
 | SMOKE-014 | ✅ | GET /api/notifications?unread=1 → 200 |
-| SMOKE-015 | ✅ | /sitemap.xml → 200 |
-| SMOKE-016 | ✅ | Tab → skip-link видна |
-| SMOKE-017 | ✅ | Tab → focus-visible ring (accent outline) |
-| SMOKE-018 | ✅ | /admin/articles 768px → без обрезки |
+| SMOKE-015 | ✅ | /sitemap.xml → 200, url-теги присутствуют |
+| SMOKE-016 | ✅ | Tab → skip-link активна, Enter → #main-content |
+| SMOKE-017 | ✅ | Focus-visible teal ring на интерактивных элементах |
+| SMOKE-018 | ✅ | Admin таблица с горизонтальным скроллом на 768px |
 
-### UI smoke (SMOKE-UI-001 — SMOKE-UI-003)
+**Итог: 18/18 PASS**
+
+---
+
+## UI тест-кейсы (TC-UI)
 
 | Тест | Статус | Комментарий |
 |------|--------|-------------|
-| SMOKE-UI-001 | ✅ | Dark/light тема переключается, classList.contains('dark') |
-| SMOKE-UI-002 | ✅ | Mobile 375px: hamburger → меню → ссылки |
-| SMOKE-UI-003 | ✅ | Skip-link → Tab → видна → Enter → фокус на main |
+| TC-UI-001 | ✅ | Skip-to-content: link active после Tab, URL → /#main-content |
+| TC-UI-002 | ✅ | Dark/light: тема переключается, сохраняется после reload |
+| TC-UI-003 | ✅ | Mobile nav (375px): hamburger, open/close, Escape закрывает (исправлено в 25d) |
+| TC-UI-008 | ✅ | Focus-visible ring на всех интерактивных элементах |
 
-## Замечания (INFO, не блокирующие)
-1. /feed.xml содержит `https://localhost:3000` — NEXT_PUBLIC_BASE_URL для тестового стенда, на проде будет корректный URL
-2. GET /api/articles требует авторизацию — ожидаемое поведение
+---
+
+## UX Review (5 flows)
+
+| Flow | Статус | Комментарий |
+|------|--------|-------------|
+| Flow 1: Гость читает статью | ✅ PASS | Cover image, scroll progress, code blocks корректны |
+| Flow 2: Читатель взаимодействует | ✅ PASS | Голосование, закладки, комментарии работают |
+| Flow 3: Автор создаёт статью | ✅ PASS | Placeholder без # Заголовок; медиа вставляется в конец |
+| Flow 4: Ревьюер проводит ревью | ✅ PASS | Ровно 1x h1, нет дублирования, медиа видно |
+| Flow 5: Админ управляет | ✅ PASS | Dashboard, таблицы, горизонтальный скролл |
+
+---
+
+## SEO проверка
+
+| Страница | Критерий | Статус | Комментарий |
+|----------|----------|--------|-------------|
+| / | title | ✅ | "Denjamin" |
+| / | description | ✅ | Из profile.bio |
+| / | og:title / og:description | ✅ | Есть |
+| / | og:image | ⚠️ | Не задан (profile.defaultOgImage пуст в test DB) |
+| / | canonical | ⚠️ | Отсутствует на homepage |
+| /blog/[slug] | title | ✅ | "Заголовок | devblog" |
+| /blog/[slug] | description | ✅ | Исправлено: MDX-теги стриппятся |
+| /blog/[slug] | og:image | ✅ | Cover image URL |
+| /blog/[slug] | og:type | ✅ | "article" |
+| /blog/[slug] | twitter:card | ✅ | "summary_large_image" |
+| /blog/[slug] | canonical | ✅ | Полный URL |
+| /blog/[slug] | JSON-LD | ✅ | Присутствует |
+
+---
+
+## Найденные и исправленные проблемы (Фаза 25)
+
+### P0 — нет
+
+### P2 (улучшение)
+
+| # | Проблема | Файл | Исправление |
+|---|----------|------|-------------|
+| 1 | Mobile nav: Escape не закрывал меню | `src/components/nav-mobile-menu.tsx` | Добавлен `useEffect` с `keydown` listener |
+| 2 | SEO description содержала MDX-теги `<ArticleImage>` | `src/lib/utils.ts` | Добавлен `.replace(/<[^>]+>/g, "")` в `mdxToPlainText` |
+
+---
 
 ## Итог
-- **Прошли: 21/21**
-- **Провалились: 0**
-- **Вердикт: GO**
+
+- **Smoke: 18/18** ✅
+- **TC-UI: 4/4** ✅
+- **UX flows: 5/5** ✅
+- **P0 баги: 0**
+- **P2 баги: 2 (оба исправлены)**
+- **npm run build:** ✅
+- **Вердикт: ✅ GO**

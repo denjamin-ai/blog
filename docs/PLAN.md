@@ -617,3 +617,43 @@
 - `testing/reports/REPORT_UI_FINAL.md` — финальный прогон
 - `PLAN.md` — обновлён
 - `CLAUDE.md` — обновлён (секция Design System)
+
+---
+
+### Фаза 25 — Ре-ран (2026-04-15): Медиа + Финальная валидация
+
+**Scope**: Баг дублирования медиа + тесты 1–7 + повторный smoke + P2 фиксы.
+
+#### 25fixes — Баг дублирования медиа
+
+**Первопричина**: `cursorPosRef` инициализируется в `0` и не обновляется пока пользователь не кликнет в textarea. При загрузке статьи медиа вставлялось в позицию 0 (начало контента), создавая паттерн `<ArticleImage /> # Заголовок Текст...` → у ревьюера дублирование.
+
+**Фиксы**:
+1. `src/app/author/(protected)/articles/[id]/page.tsx` — `cursorPosRef.current = data.content?.length ?? 0` после `setContent()`
+2. `src/app/author/(protected)/articles/new/page.tsx` — убран `# Заголовок` из placeholder textarea
+
+#### Тесты 1–7 (все PASS)
+
+| Тест | Статус |
+|------|--------|
+| 1. Медиа при создании | ✅ PASS |
+| 2. Медиа при редактировании | ✅ PASS |
+| 3. Медиа у ревьюера (нет дублирования) | ✅ PASS |
+| 4-5. Медиа у гостя/читателя | ✅ PASS |
+| 6. Обложка (cover.png) | ✅ PASS |
+| 7. Аватар (big_author_photo.jpg) | ✅ PASS |
+
+#### 25a–25e — Повторный smoke + фиксы
+
+- **Smoke 18/18 PASS**
+- **TC-UI 4/4 PASS**
+- **UX 5/5 PASS**
+- **P2 фиксы**: Escape для mobile nav (`nav-mobile-menu.tsx`), MDX-теги в SEO description (`utils.ts → mdxToPlainText`)
+- **npm run build: ✅**
+- Отчёт: `testing/reports/REPORT_UI_FINAL.md`
+
+**Файлы изменены**:
+- `src/app/author/(protected)/articles/[id]/page.tsx` — cursorPosRef init fix
+- `src/app/author/(protected)/articles/new/page.tsx` — placeholder fix
+- `src/components/nav-mobile-menu.tsx` — Escape key handler
+- `src/lib/utils.ts` — MDX tag stripping in mdxToPlainText

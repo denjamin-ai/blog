@@ -5,6 +5,7 @@ export function mdxToPlainText(src: string, maxLen = 160): string {
     .replace(/`[^`]*`/g, "")
     .replace(/!\[.*?\]\(.*?\)/g, "")
     .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/<[^>]+>/g, "")
     .replace(/#{1,6}\s/g, "")
     .replace(/\*\*([^*]+)\*\*/g, "$1")
     .replace(/\*([^*]+)\*/g, "$1")

@@ -13,6 +13,7 @@ export function ShareButton({ title, slug }: ShareButtonProps) {
   const [clipboardAvailable, setClipboardAvailable] = useState(true);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setClipboardAvailable(
       typeof navigator !== "undefined" && !!navigator.clipboard,
     );

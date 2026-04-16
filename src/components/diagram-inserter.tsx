@@ -4,6 +4,8 @@ import { useState } from "react";
 
 interface DiagramInserterProps {
   onInsert: (text: string) => void;
+  open: boolean;
+  onClose: () => void;
 }
 
 type DiagramGroup = "mermaid" | "kroki";
@@ -201,11 +203,16 @@ Bob --> Alice: Ответ
 const MERMAID_TYPES = DIAGRAM_TYPES.filter((d) => d.group === "mermaid");
 const KROKI_TYPES = DIAGRAM_TYPES.filter((d) => d.group === "kroki");
 
-export function DiagramInserter({ onInsert }: DiagramInserterProps) {
-  const [isOpen, setIsOpen] = useState(false);
+export function DiagramInserter({
+  onInsert,
+  open,
+  onClose,
+}: DiagramInserterProps) {
   const [selected, setSelected] = useState<DiagramType>(DIAGRAM_TYPES[0]);
   const [previewSvg, setPreviewSvg] = useState<string | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
+
+  if (!open) return null;
 
   async function handleSelect(dt: DiagramType) {
     setSelected(dt);
@@ -214,7 +221,6 @@ export function DiagramInserter({ onInsert }: DiagramInserterProps) {
 
     if (dt.group === "mermaid") {
       try {
-        // Extract chart content from template for inline preview
         const match = dt.template.match(/chart=\{`([\s\S]*?)`\s*\}/);
         const chart = match?.[1];
         if (chart) {
@@ -233,146 +239,108 @@ export function DiagramInserter({ onInsert }: DiagramInserterProps) {
 
   function handleInsert() {
     onInsert(selected.template);
-    setIsOpen(false);
+    onClose();
     setPreviewSvg(null);
     setPreviewError(null);
   }
 
   return (
-    <div className="mb-2">
-      <button
-        type="button"
-        onClick={() => setIsOpen((v) => !v)}
-        className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-border rounded-lg hover:bg-muted transition-colors font-medium"
-      >
-        <svg
-          className="w-4 h-4"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={1.75}
-        >
-          <rect x="3" y="3" width="7" height="7" rx="1" />
-          <rect x="14" y="3" width="7" height="7" rx="1" />
-          <rect x="3" y="14" width="7" height="7" rx="1" />
-          <path d="M17.5 14v7M14 17.5h7" />
-        </svg>
-        Диаграмма
-        <svg
-          className={`w-3 h-3 transition-transform ${isOpen ? "rotate-180" : ""}`}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2.5}
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M19 9l-7 7-7-7"
-          />
-        </svg>
-      </button>
-
-      {isOpen && (
-        <div className="mt-2 p-3 border border-border rounded-lg bg-muted/30 space-y-3">
-          {/* Mermaid types */}
-          <div>
-            <p className="text-xs text-muted-foreground mb-1.5 font-medium">
-              Mermaid (клиентский рендер)
-            </p>
-            <div className="flex flex-wrap gap-1">
-              {MERMAID_TYPES.map((dt) => (
-                <button
-                  key={dt.id}
-                  type="button"
-                  onClick={() => handleSelect(dt)}
-                  aria-pressed={selected.id === dt.id}
-                  className={`px-2 py-1 text-xs rounded-md border transition-colors ${
-                    selected.id === dt.id
-                      ? "bg-accent text-accent-foreground border-accent"
-                      : "border-border hover:bg-muted"
-                  }`}
-                >
-                  {dt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Kroki types */}
-          <div>
-            <p className="text-xs text-muted-foreground mb-1.5 font-medium">
-              Kroki (серверный рендер)
-            </p>
-            <div className="flex flex-wrap gap-1">
-              {KROKI_TYPES.map((dt) => (
-                <button
-                  key={dt.id}
-                  type="button"
-                  onClick={() => handleSelect(dt)}
-                  aria-pressed={selected.id === dt.id}
-                  className={`px-2 py-1 text-xs rounded-md border transition-colors ${
-                    selected.id === dt.id
-                      ? "bg-accent text-accent-foreground border-accent"
-                      : "border-border hover:bg-muted"
-                  }`}
-                >
-                  {dt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Preview area */}
-          <div className="min-h-[4rem] px-3 py-2 border border-border rounded-lg bg-background overflow-auto">
-            {selected.group === "mermaid" ? (
-              previewError ? (
-                <p className="text-xs text-danger">{previewError}</p>
-              ) : previewSvg ? (
-                <div
-                  dangerouslySetInnerHTML={{ __html: previewSvg }}
-                  className="[&_svg]:max-w-full [&_svg]:h-auto"
-                />
-              ) : (
-                <p className="text-xs text-muted-foreground">
-                  Нажмите тип для предпросмотра
-                </p>
-              )
-            ) : (
-              <p className="text-xs text-muted-foreground">
-                Предпросмотр недоступен — рендер происходит на сервере при
-                публикации
-              </p>
-            )}
-          </div>
-
-          {/* Template preview */}
-          <div>
-            <p className="text-xs text-muted-foreground mb-1">Шаблон</p>
-            <pre className="text-xs font-mono bg-background border border-border rounded p-2 overflow-auto max-h-28 whitespace-pre-wrap break-all">
-              {selected.template}
-            </pre>
-          </div>
-
-          {/* Actions */}
-          <div className="flex justify-end gap-2">
+    <div className="mb-2 p-3 border border-border rounded-lg bg-muted/30 space-y-3">
+      {/* Mermaid types */}
+      <div>
+        <p className="text-xs text-muted-foreground mb-1.5 font-medium">
+          Mermaid (клиентский рендер)
+        </p>
+        <div className="flex flex-wrap gap-1">
+          {MERMAID_TYPES.map((dt) => (
             <button
+              key={dt.id}
               type="button"
-              onClick={() => setIsOpen(false)}
-              className="px-3 py-1.5 text-xs border border-border rounded-lg hover:bg-muted transition-colors"
+              onClick={() => handleSelect(dt)}
+              aria-pressed={selected.id === dt.id}
+              className={`px-2 py-1 text-xs rounded-md border transition-colors ${
+                selected.id === dt.id
+                  ? "bg-accent text-accent-foreground border-accent"
+                  : "border-border hover:bg-muted"
+              }`}
             >
-              Закрыть
+              {dt.label}
             </button>
-            <button
-              type="button"
-              onClick={handleInsert}
-              className="px-3 py-1.5 text-xs bg-accent text-accent-foreground rounded-lg hover:opacity-90 transition-opacity font-medium"
-            >
-              Вставить диаграмму
-            </button>
-          </div>
+          ))}
         </div>
-      )}
+      </div>
+
+      {/* Kroki types */}
+      <div>
+        <p className="text-xs text-muted-foreground mb-1.5 font-medium">
+          Kroki (серверный рендер)
+        </p>
+        <div className="flex flex-wrap gap-1">
+          {KROKI_TYPES.map((dt) => (
+            <button
+              key={dt.id}
+              type="button"
+              onClick={() => handleSelect(dt)}
+              aria-pressed={selected.id === dt.id}
+              className={`px-2 py-1 text-xs rounded-md border transition-colors ${
+                selected.id === dt.id
+                  ? "bg-accent text-accent-foreground border-accent"
+                  : "border-border hover:bg-muted"
+              }`}
+            >
+              {dt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Preview area */}
+      <div className="min-h-[4rem] px-3 py-2 border border-border rounded-lg bg-background overflow-auto">
+        {selected.group === "mermaid" ? (
+          previewError ? (
+            <p className="text-xs text-danger">{previewError}</p>
+          ) : previewSvg ? (
+            <div
+              dangerouslySetInnerHTML={{ __html: previewSvg }}
+              className="[&_svg]:max-w-full [&_svg]:h-auto"
+            />
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Нажмите тип для предпросмотра
+            </p>
+          )
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            Предпросмотр недоступен — рендер на сервере при публикации
+          </p>
+        )}
+      </div>
+
+      {/* Template */}
+      <div>
+        <p className="text-xs text-muted-foreground mb-1">Шаблон</p>
+        <pre className="text-xs font-mono bg-background border border-border rounded p-2 overflow-auto max-h-28 whitespace-pre-wrap break-all">
+          {selected.template}
+        </pre>
+      </div>
+
+      {/* Actions */}
+      <div className="flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={onClose}
+          className="px-3 py-1.5 text-xs border border-border rounded-lg hover:bg-muted transition-colors"
+        >
+          Закрыть
+        </button>
+        <button
+          type="button"
+          onClick={handleInsert}
+          className="px-3 py-1.5 text-xs bg-accent text-accent-foreground rounded-lg hover:opacity-90 transition-opacity font-medium"
+        >
+          Вставить диаграмму
+        </button>
+      </div>
     </div>
   );
 }
