@@ -72,6 +72,15 @@ export default function AuthorEditArticlePage() {
   const [showPreview, setShowPreview] = useState(false);
   const [showDiffPreview, setShowDiffPreview] = useState(false);
   const editor = useArticleEditor(content, setContent);
+  const [mediaDimWidth, setMediaDimWidth] = useState("");
+  const [mediaDimHeight, setMediaDimHeight] = useState("");
+
+  useEffect(() => {
+    if (editor.mediaPreview) {
+      setMediaDimWidth(editor.mediaPreview.width?.toString() ?? "");
+      setMediaDimHeight(editor.mediaPreview.height?.toString() ?? "");
+    }
+  }, [editor.mediaPreview]);
 
   const loadAssignments = useCallback(async () => {
     try {
@@ -278,11 +287,11 @@ export default function AuthorEditArticlePage() {
     }
   }
 
-  async function handleSendForReview(reviewer: {
+  async function handleSendForReview(reviewers: {
     id: string;
     name: string;
     username: string;
-  }) {
+  }[]) {
     setError("");
     setSaving(true);
     try {
@@ -291,7 +300,7 @@ export default function AuthorEditArticlePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           saveMode: "send_for_review",
-          reviewerId: reviewer.id,
+          reviewerIds: reviewers.map((r) => r.id),
         }),
       });
       if (res.ok) {
@@ -701,6 +710,26 @@ export default function AuthorEditArticlePage() {
                       {Math.round(editor.mediaPreview.duration)} сек
                     </p>
                   )}
+                  <div className="flex items-center gap-1.5 mt-1.5">
+                    <input
+                      type="number"
+                      min={1}
+                      placeholder="Ширина"
+                      value={mediaDimWidth}
+                      onChange={(e) => setMediaDimWidth(e.target.value)}
+                      className="w-20 px-2 py-0.5 border border-border rounded text-xs bg-background"
+                    />
+                    <span className="text-xs text-muted-foreground">×</span>
+                    <input
+                      type="number"
+                      min={1}
+                      placeholder="Высота"
+                      value={mediaDimHeight}
+                      onChange={(e) => setMediaDimHeight(e.target.value)}
+                      className="w-20 px-2 py-0.5 border border-border rounded text-xs bg-background"
+                    />
+                    <span className="text-xs text-muted-foreground">px</span>
+                  </div>
                 </div>
                 <button
                   type="button"
@@ -708,6 +737,8 @@ export default function AuthorEditArticlePage() {
                     editor.insertMediaTag(
                       editor.mediaPreview!.url,
                       editor.mediaPreview!.type,
+                      mediaDimWidth ? parseInt(mediaDimWidth) : undefined,
+                      mediaDimHeight ? parseInt(mediaDimHeight) : undefined,
                     )
                   }
                   className="px-3 py-1 bg-accent text-accent-foreground rounded-lg text-xs font-medium hover:opacity-90 transition-opacity flex-shrink-0"
@@ -986,9 +1017,9 @@ export default function AuthorEditArticlePage() {
       <ReviewerPickerModal
         open={showReviewModal}
         onClose={() => setShowReviewModal(false)}
-        onSelect={(reviewer) => {
-          setShowReviewModal(false);
-          handleSendForReview(reviewer);
+        difficulty={difficulty as import("@/types").DifficultyLevel | null}
+        onSelect={(reviewers) => {
+          handleSendForReview(reviewers);
         }}
       />
 

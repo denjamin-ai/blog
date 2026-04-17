@@ -405,3 +405,82 @@
 ### Test Steps
 1. Авторизоваться как `reviewer`, открыть `/admin`
    **Expected:** HTTP 403 или редирект на `/admin/login`
+
+---
+
+## Сессия и общий чат
+
+## TC-RV-CHAT-001: Читать сообщения от других ревьюеров и автора
+
+**US:** US-RV7  
+**Priority:** P1  
+**Type:** Functional  
+**Estimated Time:** 3 мин
+
+### Preconditions
+- [ ] Назначение в статусе `accepted`; в треде есть сообщения от автора или другого ревьюера
+
+### Test Steps
+1. Открыть `/reviewer/assignments/[id]`
+   **Expected:** Общий тред отображается; видны сообщения от других участников с именами и временем
+
+---
+
+## TC-RV-CHAT-002: Написать сообщение в общий чат, проверить видимость
+
+**US:** US-RV7  
+**Priority:** P0  
+**Type:** Functional  
+**Estimated Time:** 4 мин
+
+### Preconditions
+- [ ] Назначение в статусе `accepted`
+
+### Test Steps
+1. На `/reviewer/assignments/[id]` → ввести текст → «Отправить»
+   **Expected:** Сообщение появляется в треде; уведомление `review_comment_reply` у автора/админа
+2. Проверить видимость сообщения у администратора на `/admin/articles/[id]/review`
+   **Expected:** Сообщение ревьюера отображается в том же треде
+
+---
+
+## TC-RV-SESSION-001: Видеть участников сессии и их статусы
+
+**US:** US-RV3  
+**Priority:** P1  
+**Type:** Functional  
+**Estimated Time:** 3 мин
+
+### Preconditions
+- [ ] Статья имеет ≥ 2 назначения (от разных ревьюеров)
+
+### Test Steps
+1. Открыть `/reviewer/assignments/[id]`
+   **Expected:** Видна информация о назначении; возможно отображение статусов других ревьюеров сессии (если реализовано)
+
+---
+
+## TC-RV-SESSION-002: Ревьюер не из сессии → 403
+
+**US:** US-RV3 (security)  
+**Priority:** P0  
+**Type:** Security  
+**Estimated Time:** 2 мин
+
+### Test Steps
+1. Авторизоваться как ревьюер, у которого нет назначения для данной статьи
+2. Попытаться открыть `/reviewer/assignments/[id_чужого_назначения]`
+   **Expected:** HTTP 403
+
+---
+
+## TC-RV-GUIDE-001: Открытие руководства ревьюера
+
+**US:** US-RV2  
+**Priority:** P1  
+**Type:** Functional  
+**Estimated Time:** 2 мин
+
+### Test Steps
+1. На `/reviewer` или `/reviewer/assignments/[id]` найти ссылку/кнопку «Руководство»
+   **Expected:** Модальное окно или страница с руководством для ревьюеров открывается; контент содержит инструкции по процессу ревью

@@ -2,12 +2,13 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import {
   reviewAssignments,
+  reviewSessions,
   articleVersions,
   reviewComments,
   notifications,
 } from "@/lib/db/schema";
 import { requireUser } from "@/lib/auth";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import { ulid } from "ulid";
 
 export const dynamic = "force-dynamic";
@@ -45,11 +46,18 @@ export async function GET(
     .where(eq(articleVersions.id, assignment.articleVersionId))
     .get();
 
-  const comments = await db
-    .select()
-    .from(reviewComments)
-    .where(eq(reviewComments.assignmentId, id))
-    .orderBy(desc(reviewComments.createdAt));
+  // Комментарии загружаем по sessionId (общий чат); fallback по assignmentId для старых записей
+  const comments = assignment.sessionId
+    ? await db
+        .select()
+        .from(reviewComments)
+        .where(eq(reviewComments.sessionId, assignment.sessionId))
+        .orderBy(reviewComments.createdAt)
+    : await db
+        .select()
+        .from(reviewComments)
+        .where(eq(reviewComments.assignmentId, id))
+        .orderBy(reviewComments.createdAt);
 
   const resolvedCount = comments.filter((c) => c.resolvedAt !== null).length;
   const totalComments = comments.length;
@@ -188,6 +196,25 @@ export async function PATCH(
       updatedAt: now,
     })
     .where(eq(reviewAssignments.id, id));
+
+  // Auto-complete сессии: если все ревьюеры выставили approved — закрыть сессию
+  if (next === "completed" && verdict === "approved" && assignment.sessionId) {
+    const sessionAssignments = await db
+      .select({ status: reviewAssignments.status, verdict: reviewAssignments.verdict })
+      .from(reviewAssignments)
+      .where(eq(reviewAssignments.sessionId, assignment.sessionId));
+
+    const allApproved = sessionAssignments.every(
+      (a) => a.status === "completed" && a.verdict === "approved",
+    );
+
+    if (allApproved) {
+      await db
+        .update(reviewSessions)
+        .set({ status: "completed", completedAt: now })
+        .where(eq(reviewSessions.id, assignment.sessionId));
+    }
+  }
 
   // Notify admin
   const notifType =

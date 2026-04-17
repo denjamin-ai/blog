@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ThemeToggle } from "./theme-toggle";
+import { GuideButton, type GuideRole } from "./guide-modal";
 
 interface NavLink {
   href: string;
@@ -15,6 +16,7 @@ interface NavMobileMenuProps {
   userPortalLabel?: string;
   isLoggedIn: boolean;
   logoutAction?: () => Promise<void>;
+  guideRole: GuideRole;
 }
 
 export function NavMobileMenu({
@@ -23,6 +25,7 @@ export function NavMobileMenu({
   userPortalLabel,
   isLoggedIn,
   logoutAction,
+  guideRole,
 }: NavMobileMenuProps) {
   const [open, setOpen] = useState(false);
 
@@ -38,6 +41,7 @@ export function NavMobileMenu({
   return (
     <div className="flex sm:hidden items-center gap-2">
       <ThemeToggle />
+      <GuideButton role={guideRole} />
       <button
         onClick={() => setOpen(!open)}
         className="w-9 h-9 flex items-center justify-center rounded-md hover:bg-muted transition-colors"

@@ -6,9 +6,12 @@ interface ArticleImageProps {
   src: string;
   alt: string;
   caption?: string;
+  width?: number;
+  height?: number;
 }
 
-export function ArticleImage({ src, alt, caption }: ArticleImageProps) {
+export function ArticleImage({ src, alt, caption, width, height }: ArticleImageProps) {
+  const hasCustomSize = width !== undefined || height !== undefined;
   const [isOpen, setIsOpen] = useState(false);
 
   const close = useCallback(() => setIsOpen(false), []);
@@ -29,7 +32,11 @@ export function ArticleImage({ src, alt, caption }: ArticleImageProps) {
           src={src}
           alt={alt}
           onClick={() => setIsOpen(true)}
-          className="w-full rounded-xl border border-border/50 shadow-sm cursor-zoom-in transition-opacity motion-safe:hover:opacity-90"
+          className={`${hasCustomSize ? "" : "w-full "}rounded-xl border border-border/50 shadow-sm cursor-zoom-in transition-opacity motion-safe:hover:opacity-90`}
+          style={hasCustomSize ? {
+            maxWidth: width ? `${width}px` : undefined,
+            maxHeight: height ? `${height}px` : undefined,
+          } : undefined}
         />
         {caption && (
           <figcaption className="mt-2 text-center text-sm text-muted-foreground italic">

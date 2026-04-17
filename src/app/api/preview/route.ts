@@ -93,15 +93,29 @@ function remarkMdxDiagramsToHtml() {
           const src = getAttr("src");
           const alt = getAttr("alt");
           const caption = getAttr("caption");
+          const imgWidth = getAttr("width");
+          const imgHeight = getAttr("height");
+          const imgSizeStyle =
+            imgWidth || imgHeight
+              ? `${imgWidth ? `max-width:${imgWidth}px;` : ""}${imgHeight ? `max-height:${imgHeight}px;` : ""}`
+              : "width:100%;";
           const captionHtml = caption
             ? `<figcaption style="text-align:center;font-size:0.875rem;color:var(--color-muted-foreground);font-style:italic;margin-top:0.5rem">${escape(caption)}</figcaption>`
             : "";
-          html = `<figure style="margin:1.5rem 0"><img src="${escapeAttr(src)}" alt="${escapeAttr(alt)}" style="width:100%;border-radius:0.75rem;border:1px solid var(--color-border)" />${captionHtml}</figure>`;
+          html = `<figure style="margin:1.5rem 0"><img src="${escapeAttr(src)}" alt="${escapeAttr(alt)}" style="${imgSizeStyle}border-radius:0.75rem;border:1px solid var(--color-border)" />${captionHtml}</figure>`;
         } else if (name === "ArticleVideo") {
           const src = getAttr("src");
           const poster = getAttr("poster");
+          const vidWidth = getAttr("width");
+          const vidHeight = getAttr("height");
+          const wrapStyle =
+            vidWidth
+              ? `margin:1.5rem 0;max-width:${vidWidth}px;border-radius:0.75rem;overflow:hidden;border:1px solid var(--color-border)`
+              : "margin:1.5rem 0;border-radius:0.75rem;overflow:hidden;border:1px solid var(--color-border)";
+          const vidSizeStyle =
+            vidHeight ? `width:100%;display:block;max-height:${vidHeight}px` : "width:100%;display:block";
           const posterAttr = poster ? ` poster="${escapeAttr(poster)}"` : "";
-          html = `<div style="margin:1.5rem 0;border-radius:0.75rem;overflow:hidden;border:1px solid var(--color-border)"><video src="${escapeAttr(src)}"${posterAttr} controls preload="metadata" style="width:100%;display:block"></video></div>`;
+          html = `<div style="${wrapStyle}"><video src="${escapeAttr(src)}"${posterAttr} controls preload="metadata" style="${vidSizeStyle}"></video></div>`;
         }
 
         if (html) {

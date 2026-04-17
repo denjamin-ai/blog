@@ -7,6 +7,8 @@ interface MediaPreview {
   type: "image" | "video";
   name: string;
   duration?: number;
+  width?: number;
+  height?: number;
 }
 
 export function useArticleEditor(
@@ -34,11 +36,15 @@ export function useArticleEditor(
   );
 
   const insertMediaTag = useCallback(
-    (url: string, type: "image" | "video") => {
+    (url: string, type: "image" | "video", width?: number, height?: number) => {
+      const dims = [
+        width ? ` width={${width}}` : "",
+        height ? ` height={${height}}` : "",
+      ].join("");
       const tag =
         type === "image"
-          ? `<ArticleImage src="${url}" alt="" />`
-          : `<ArticleVideo src="${url}" />`;
+          ? `<ArticleImage src="${url}" alt=""${dims} />`
+          : `<ArticleVideo src="${url}"${dims} />`;
       insertAtCursor(tag);
       setMediaPreview(null);
     },
@@ -66,6 +72,8 @@ export function useArticleEditor(
           url?: string;
           type?: string;
           duration?: number;
+          width?: number;
+          height?: number;
           error?: string;
         } = {};
         try {
@@ -79,6 +87,8 @@ export function useArticleEditor(
             type: (data.type as "image" | "video") ?? "image",
             name: file.name,
             duration: data.duration,
+            width: data.width,
+            height: data.height,
           });
         } else {
           setMediaUploadError(data.error ?? "Ошибка загрузки");

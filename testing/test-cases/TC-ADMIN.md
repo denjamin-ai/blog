@@ -665,3 +665,70 @@
 
 2. `GET /api/reviewer/assignments`
    **Expected:** HTTP 403
+
+---
+
+## Мультиревьюер и сессии ревью
+
+## TC-AD-SESSION-001: Создание сессии с 3 ревьюерами
+
+**US:** US-AD9  
+**Priority:** P0  
+**Type:** Functional  
+**Estimated Time:** 8 мин
+
+### Preconditions
+- [ ] Есть ≥ 3 пользователя с ролью `reviewer`; статья в статусе `draft`
+
+### Test Steps
+1. Открыть `/admin/articles/[id]` → «Отправить на ревью» → выбрать ревьюера #1 через `ReviewerPickerModal`
+   **Expected:** Назначение #1 создано (pending); уведомление ревьюеру #1
+2. Повторить для ревьюера #2 и ревьюера #3
+   **Expected:** Три отдельных назначения; три уведомления
+3. Проверить страницу `/admin/articles/[id]/review`
+   **Expected:** Три карточки назначений: имя ревьюера, статус `pending`, дата создания
+
+---
+
+## TC-AD-SESSION-002: Просмотр статуса сессии (3 карточки)
+
+**US:** US-AD9  
+**Priority:** P1  
+**Type:** Functional  
+**Estimated Time:** 3 мин
+
+### Preconditions
+- [ ] Статья с тремя назначениями в разных статусах (pending, accepted, completed)
+
+### Test Steps
+1. Открыть `/admin/articles/[id]/review`
+   **Expected:** Три карточки с разными цветными бейджами статусов; у завершённого — вердикт и заметка ревьюера
+
+---
+
+## TC-AD-SESSION-003: Уведомить всех ревьюеров сессии
+
+**US:** US-AD9  
+**Priority:** P1  
+**Type:** Functional  
+**Estimated Time:** 4 мин
+
+### Preconditions
+- [ ] Есть ≥ 2 активных назначения (pending или accepted)
+
+### Test Steps
+1. На `/admin/articles/[id]` сохранить изменения с `saveMode=notify_reviewer`
+   **Expected:** Уведомления `article_updated` отправлены всем ревьюерам с активными назначениями
+
+---
+
+## TC-AD-GUIDE-001: Открытие руководства администратора
+
+**US:** US-AD2  
+**Priority:** P1  
+**Type:** Functional  
+**Estimated Time:** 2 мин
+
+### Test Steps
+1. На `/admin` найти ссылку/кнопку «Руководство»
+   **Expected:** Модальное окно или страница с руководством для администратора открывается; контент содержит инструкции по управлению блогом

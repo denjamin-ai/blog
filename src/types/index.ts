@@ -33,6 +33,34 @@ export type ReviewAssignmentStatus =
 
 export type ReviewVerdict = "approved" | "needs_work" | "rejected";
 
+export type ReviewSessionStatus = "open" | "completed" | "cancelled";
+
+export interface ReviewSession {
+  id: string;
+  articleId: string;
+  articleVersionId: string;
+  status: ReviewSessionStatus;
+  createdAt: number;
+  completedAt: number | null;
+}
+
+export interface ReviewSessionAssignment {
+  id: string;
+  sessionId: string | null;
+  reviewerId: string;
+  reviewerName: string | null;
+  reviewerUsername: string | null;
+  status: ReviewAssignmentStatus;
+  verdict: ReviewVerdict | null;
+  verdictNote: string | null;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface ReviewSessionWithAssignments extends ReviewSession {
+  assignments: ReviewSessionAssignment[];
+}
+
 export interface ChecklistItem {
   text: string;
   checked: boolean;

@@ -5,16 +5,19 @@ import {
   articleVersions,
   articleChangelog,
   reviewAssignments,
-  reviewChecklists,
+  reviewSessions,
   subscriptions,
   bookmarks,
   users,
   notifications,
-  profile,
 } from "@/lib/db/schema";
 import { getSession } from "@/lib/auth";
 import { eq, and, ne, or, desc } from "drizzle-orm";
 import { ulid } from "ulid";
+import {
+  createSessionWithAssignments,
+  validateReviewerCount,
+} from "@/lib/session-helpers";
 
 // Resolves access for admin or author. Returns null if unauthorized.
 // For author, also returns their userId for ownership checks.
@@ -74,6 +77,7 @@ export async function PUT(
     changeNote?: unknown;
     saveMode?: unknown;
     reviewerId?: unknown;
+    reviewerIds?: unknown;
     changelog?: unknown;
     coverImageUrl?: unknown;
     difficulty?: unknown;
@@ -101,6 +105,7 @@ export async function PUT(
     changeNote,
     saveMode,
     reviewerId,
+    reviewerIds: reviewerIdsRaw,
     changelog,
     coverImageUrl,
     difficulty,
@@ -109,6 +114,13 @@ export async function PUT(
     ogDescription,
     ogImage,
   } = body;
+
+  // Поддержка обоих форматов: reviewerIds (массив) и reviewerId (строка, legacy)
+  const reviewerIds: string[] = Array.isArray(reviewerIdsRaw)
+    ? (reviewerIdsRaw as string[])
+    : typeof reviewerId === "string" && reviewerId
+      ? [reviewerId]
+      : [];
 
   if (
     title !== undefined &&
@@ -211,9 +223,9 @@ export async function PUT(
   }
 
   if (saveMode === "send_for_review") {
-    if (!reviewerId || typeof reviewerId !== "string") {
+    if (reviewerIds.length === 0) {
       return NextResponse.json(
-        { error: "reviewerId обязателен при saveMode=send_for_review" },
+        { error: "reviewerIds обязателен при saveMode=send_for_review" },
         { status: 400 },
       );
     }
@@ -302,39 +314,49 @@ export async function PUT(
     }
   }
 
-  // Guard for send_for_review: check reviewer exists and no active assignment
+  // Guard for send_for_review: validate reviewers, check no active open session
   if (saveMode === "send_for_review") {
-    const reviewerIdStr = reviewerId as string;
-    const reviewer = await db
-      .select({ id: users.id, role: users.role })
-      .from(users)
-      .where(eq(users.id, reviewerIdStr))
-      .get();
-
-    if (!reviewer || reviewer.role !== "reviewer") {
-      return NextResponse.json({ error: "Ревьер не найден" }, { status: 404 });
+    const countError = validateReviewerCount(reviewerIds, existing.difficulty);
+    if (countError) {
+      return NextResponse.json({ error: countError }, { status: 400 });
     }
 
-    const activeAssignment = await db
-      .select({ id: reviewAssignments.id })
-      .from(reviewAssignments)
-      .where(
-        and(
-          eq(reviewAssignments.articleId, id),
-          eq(reviewAssignments.reviewerId, reviewerIdStr),
-          or(
-            eq(reviewAssignments.status, "pending"),
-            eq(reviewAssignments.status, "accepted"),
+    for (const rid of reviewerIds) {
+      if (typeof rid !== "string" || !rid) {
+        return NextResponse.json({ error: "Некорректный reviewerId" }, { status: 400 });
+      }
+      const reviewer = await db
+        .select({ id: users.id, role: users.role, isBlocked: users.isBlocked })
+        .from(users)
+        .where(eq(users.id, rid))
+        .get();
+      if (!reviewer || reviewer.role !== "reviewer") {
+        return NextResponse.json({ error: "Ревьюер не найден" }, { status: 404 });
+      }
+      if (reviewer.isBlocked) {
+        return NextResponse.json({ error: "Ревьюер заблокирован" }, { status: 400 });
+      }
+      // Проверить: нет активного назначения в открытой сессии
+      const activeAssignment = await db
+        .select({ id: reviewAssignments.id })
+        .from(reviewAssignments)
+        .where(
+          and(
+            eq(reviewAssignments.articleId, id),
+            eq(reviewAssignments.reviewerId, rid),
+            or(
+              eq(reviewAssignments.status, "pending"),
+              eq(reviewAssignments.status, "accepted"),
+            ),
           ),
-        ),
-      )
-      .get();
-
-    if (activeAssignment) {
-      return NextResponse.json(
-        { error: "Уже есть активное назначение для этой пары статья/ревьер" },
-        { status: 409 },
-      );
+        )
+        .get();
+      if (activeAssignment) {
+        return NextResponse.json(
+          { error: "Уже есть активное назначение для этой пары статья/ревьюер" },
+          { status: 409 },
+        );
+      }
     }
   }
 
@@ -424,90 +446,65 @@ export async function PUT(
     return NextResponse.json({ error: "Ошибка сервера" }, { status: 500 });
   }
 
-  // notify_reviewer: notify reviewer of article changes
+  // notify_reviewer: фан-аут уведомлений всем активным ревьюерам открытой сессии
   if (saveMode === "notify_reviewer") {
-    const activeAssignment = await db
-      .select({
-        id: reviewAssignments.id,
-        reviewerId: reviewAssignments.reviewerId,
-      })
-      .from(reviewAssignments)
+    const openSession = await db
+      .select({ id: reviewSessions.id })
+      .from(reviewSessions)
       .where(
         and(
-          eq(reviewAssignments.articleId, id),
-          or(
-            eq(reviewAssignments.status, "pending"),
-            eq(reviewAssignments.status, "accepted"),
-          ),
+          eq(reviewSessions.articleId, id),
+          eq(reviewSessions.status, "open"),
         ),
       )
-      .orderBy(desc(reviewAssignments.createdAt))
+      .orderBy(desc(reviewSessions.createdAt))
       .limit(1)
       .get();
 
-    if (activeAssignment) {
-      await db.insert(notifications).values({
-        id: ulid(),
-        recipientId: activeAssignment.reviewerId,
-        isAdminRecipient: 0,
-        type: "article_updated",
-        payload: JSON.stringify({
-          articleId: id,
-          assignmentId: activeAssignment.id,
-        }),
-        isRead: 0,
-        createdAt: now,
-      });
+    if (openSession) {
+      const activeAssignments = await db
+        .select({
+          id: reviewAssignments.id,
+          reviewerId: reviewAssignments.reviewerId,
+        })
+        .from(reviewAssignments)
+        .where(
+          and(
+            eq(reviewAssignments.sessionId, openSession.id),
+            or(
+              eq(reviewAssignments.status, "pending"),
+              eq(reviewAssignments.status, "accepted"),
+            ),
+          ),
+        );
+
+      if (activeAssignments.length > 0) {
+        const notifValues = activeAssignments.map((a) => ({
+          id: ulid(),
+          recipientId: a.reviewerId,
+          isAdminRecipient: 0,
+          type: "article_updated" as const,
+          payload: JSON.stringify({
+            articleId: id,
+            assignmentId: a.id,
+            sessionId: openSession.id,
+          }),
+          isRead: 0,
+          createdAt: now,
+        }));
+        await db.insert(notifications).values(notifValues);
+      }
     }
   }
 
-  // send_for_review: create assignment + notify reviewer
+  // send_for_review: создать сессию + N назначений + уведомить ревьюеров
   if (saveMode === "send_for_review") {
-    const reviewerIdStr = reviewerId as string;
-    const assignmentId = ulid();
-    await db.insert(reviewAssignments).values({
-      id: assignmentId,
+    await createSessionWithAssignments({
       articleId: id,
       articleVersionId: versionId,
-      reviewerId: reviewerIdStr,
-      status: "pending",
-      createdAt: now,
-      updatedAt: now,
+      reviewerIds,
+      now,
     });
-
-    await db.insert(notifications).values({
-      id: ulid(),
-      recipientId: reviewerIdStr,
-      isAdminRecipient: 0,
-      type: "assignment_created",
-      payload: JSON.stringify({ articleId: id, assignmentId }),
-      isRead: 0,
-      createdAt: now,
-    });
-
-    // Копируем шаблон чеклиста, если он настроен
-    const prof = await db
-      .select({ checklistTemplate: profile.checklistTemplate })
-      .from(profile)
-      .where(eq(profile.id, "main"))
-      .get();
-    if (prof?.checklistTemplate) {
-      let tmpl: { text: string }[] = [];
-      try {
-        tmpl = JSON.parse(prof.checklistTemplate);
-      } catch {
-        tmpl = [];
-      }
-      if (tmpl.length > 0) {
-        const items = tmpl.map((i) => ({ text: i.text, checked: false }));
-        await db.insert(reviewChecklists).values({
-          id: ulid(),
-          assignmentId,
-          items: JSON.stringify(items),
-          createdAt: now,
-        });
-      }
-    }
   }
 
   // Уведомить подписчиков при первой публикации статьи автора

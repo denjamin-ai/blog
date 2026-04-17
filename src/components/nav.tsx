@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth";
 import { ThemeToggle } from "./theme-toggle";
 import { NotificationBadge } from "./notification-badge";
 import { NavMobileMenu } from "./nav-mobile-menu";
+import { GuideButton, type GuideRole } from "./guide-modal";
 
 const navLinks = [{ href: "/blog", label: "Блог" }];
 
@@ -29,6 +30,12 @@ export async function Nav() {
     portalHref = "/reader";
     portalLabel = "Лента";
   }
+
+  const guideRole: GuideRole =
+    isAdmin ? "admin"
+    : userRole === "reader" || userRole === "author" || userRole === "reviewer"
+    ? userRole
+    : "guest";
 
   async function logoutAction() {
     "use server";
@@ -63,6 +70,7 @@ export async function Nav() {
             </Link>
           ))}
 
+          <GuideButton role={guideRole} />
           <ThemeToggle />
 
           {isLoggedIn && portalHref && (
@@ -102,6 +110,7 @@ export async function Nav() {
           userPortalLabel={portalLabel}
           isLoggedIn={isLoggedIn}
           logoutAction={isLoggedIn ? logoutAction : undefined}
+          guideRole={guideRole}
         />
       </div>
     </nav>

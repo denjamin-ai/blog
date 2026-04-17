@@ -71,6 +71,13 @@
       "when": 1744574400000,
       "tag": "0009_rename_email_to_username",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1776363515759,
+      "tag": "0010_military_roxanne_simpson",
+      "breakpoints": true
     }
   ]
 }

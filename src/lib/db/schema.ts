@@ -94,10 +94,33 @@ export const profileVersions = sqliteTable("profile_versions", {
 
 // --- Review & Comments System ---
 
+export const reviewSessions = sqliteTable(
+  "review_sessions",
+  {
+    id: text("id").primaryKey(),
+    articleId: text("article_id")
+      .notNull()
+      .references(() => articles.id, { onDelete: "cascade" }),
+    articleVersionId: text("article_version_id")
+      .notNull()
+      .references(() => articleVersions.id, { onDelete: "cascade" }),
+    status: text("status", { enum: ["open", "completed", "cancelled"] })
+      .notNull()
+      .default("open"),
+    createdAt: integer("created_at").notNull(),
+    completedAt: integer("completed_at"),
+  },
+  (t) => [index("review_sessions_article_idx").on(t.articleId)],
+);
+
 export const reviewAssignments = sqliteTable(
   "review_assignments",
   {
     id: text("id").primaryKey(),
+    // sessionId — nullable для миграции существующих данных; NOT NULL для новых записей
+    sessionId: text("session_id").references(() => reviewSessions.id, {
+      onDelete: "cascade",
+    }),
     articleId: text("article_id")
       .notNull()
       .references(() => articles.id, { onDelete: "cascade" }),
@@ -127,6 +150,7 @@ export const reviewAssignments = sqliteTable(
       t.reviewerId,
     ),
     index("review_assignments_reviewer_idx").on(t.reviewerId),
+    index("review_assignments_session_idx").on(t.sessionId),
   ],
 );
 
@@ -142,9 +166,12 @@ export const reviewChecklists = sqliteTable("review_checklists", {
 
 export const reviewComments = sqliteTable("review_comments", {
   id: text("id").primaryKey(),
-  assignmentId: text("assignment_id")
-    .notNull()
-    .references(() => reviewAssignments.id, { onDelete: "cascade" }),
+  // sessionId — привязка к сессии (общий чат); NULL для старых записей через миграцию
+  sessionId: text("session_id").references(() => reviewSessions.id, {
+    onDelete: "cascade",
+  }),
+  // assignmentId — сохраняется для трассируемости (nullable, без FK после миграции)
+  assignmentId: text("assignment_id"),
   // NULL = написал admin; 1 = написал admin (взаимно с authorId)
   authorId: text("author_id").references(() => users.id, {
     onDelete: "set null",

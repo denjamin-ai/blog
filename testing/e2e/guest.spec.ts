@@ -2,6 +2,7 @@
  * guest.spec.ts — тесты для неавторизованного пользователя
  *
  * US-G2: Навигация и чтение статьи
+ * TC-GU-007: Guide modal (гостевой контент)
  */
 
 import { test, expect } from "@playwright/test";
@@ -64,5 +65,32 @@ test.describe("Гость — навигация", () => {
     await page.goto("/");
     await page.waitForURL(/\/blog/, { timeout: 5_000 });
     expect(page.url()).toContain("/blog");
+  });
+});
+
+// ── TC-GU-007: Guide modal ──────────────────────────────────────────────
+
+test.describe("TC-GU-007: Руководство для гостя", () => {
+  test("открыть guide modal и закрыть через Escape", async ({ page }) => {
+    await page.goto("/blog");
+
+    const guideBtn = page
+      .locator('button[aria-label="Открыть руководство"]')
+      .first();
+    await expect(guideBtn).toBeVisible({ timeout: 5_000 });
+    await guideBtn.click();
+
+    const dialog = page.locator("dialog[open]");
+    await expect(dialog).toBeVisible({ timeout: 3_000 });
+    await expect(
+      dialog.getByText("Возможности для гостей"),
+    ).toBeVisible();
+    await expect(
+      dialog.getByText("Читайте статьи с удобным оглавлением"),
+    ).toBeVisible();
+
+    // Закрытие через Escape
+    await page.keyboard.press("Escape");
+    await expect(dialog).not.toBeVisible({ timeout: 3_000 });
   });
 });

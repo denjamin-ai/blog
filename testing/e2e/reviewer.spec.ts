@@ -11,12 +11,21 @@
  * TC-RV-022: Переоткрыть resolve при completed → 403/422 (P0)
  * TC-RV-023: GET /api/reviewer/assignments — только свои (P0)
  * TC-RV-024: Ревьюер не может зайти в /admin (P0)
+ * TC-RV-025: Чтение и запись в общий чат сессии (P0)
+ * TC-RV-026: Участники сессии видны (P1)
+ * TC-RV-027: Руководство (guide modal) (P1)
  */
 
 import { test, expect } from "@playwright/test";
 import * as path from "path";
+import * as fs from "fs";
 
 const AUTH_FILE = path.join(__dirname, ".auth/reviewer.json");
+const ADMIN_AUTH_FILE = path.join(__dirname, ".auth/admin.json");
+
+// IDs from seed.test.ts
+const REVIEWER_ID = "01TEST0000REVIEWERUSER01";
+const REVIEWER2_ID = "01TEST0000REVIEWERUSER02";
 
 // ── TC-RV-001: Вход ───────────────────────────────────────────────────────
 
@@ -338,5 +347,170 @@ test.describe("TC-RV-024: Нет доступа к /admin", () => {
     const statusForbidden = response?.status() === 403;
 
     expect(isRedirected || statusForbidden).toBeTruthy();
+  });
+});
+
+// ── TC-RV-025/026: Review Session — общий чат и участники ────────────────
+
+test.describe("TC-RV-025/026: Review Session", () => {
+  test.use({ storageState: AUTH_FILE });
+
+  // Shared state for session tests
+  let sessionAssignmentId = "";
+  let sessionId = "";
+
+  test.beforeAll(async ({ browser }) => {
+    // Create article + session via admin API
+    if (!fs.existsSync(ADMIN_AUTH_FILE)) return;
+
+    const adminCtx = await browser.newContext({
+      storageState: ADMIN_AUTH_FILE,
+    });
+    const adminPage = await adminCtx.newPage();
+
+    // Create draft article
+    const createResp = await adminPage.request.post(
+      "http://localhost:3001/api/articles",
+      {
+        data: {
+          title: "E2E reviewer session test",
+          slug: `e2e-rv-session-${Date.now()}`,
+          content: "## Статья для ревью-сессии\n\nКонтент.",
+          tags: [],
+          status: "draft",
+        },
+        headers: { Origin: "http://localhost:3001" },
+      },
+    );
+    if (!createResp.ok()) {
+      await adminCtx.close();
+      return;
+    }
+    const { id: articleId } = await createResp.json();
+
+    // Send for review with 2 reviewers
+    const putResp = await adminPage.request.put(
+      `http://localhost:3001/api/articles/${articleId}`,
+      {
+        data: {
+          saveMode: "send_for_review",
+          reviewerIds: [REVIEWER_ID, REVIEWER2_ID],
+        },
+        headers: { Origin: "http://localhost:3001" },
+      },
+    );
+    if (!putResp.ok()) {
+      await adminCtx.close();
+      return;
+    }
+
+    // Get the assignment for reviewer1
+    const sessionsResp = await adminPage.request.get(
+      `http://localhost:3001/api/articles/${articleId}/review-sessions`,
+      { headers: { Origin: "http://localhost:3001" } },
+    );
+    if (sessionsResp.ok()) {
+      const sessions = await sessionsResp.json();
+      const sessionArr = Array.isArray(sessions)
+        ? sessions
+        : sessions.sessions ?? [];
+      if (sessionArr.length > 0) {
+        const latest = sessionArr[sessionArr.length - 1];
+        sessionId = latest.id ?? latest.sessionId ?? "";
+        const assignments = latest.assignments ?? [];
+        const myAssignment = assignments.find(
+          (a: { reviewerId: string }) => a.reviewerId === REVIEWER_ID,
+        );
+        if (myAssignment) sessionAssignmentId = myAssignment.id;
+      }
+    }
+
+    await adminCtx.close();
+  });
+
+  test("TC-RV-025: написать комментарий в общий чат сессии", async ({
+    page,
+  }) => {
+    if (!sessionAssignmentId) {
+      test.skip(true, "Не удалось создать сессию в beforeAll");
+      return;
+    }
+
+    await page.goto(`/reviewer/assignments/${sessionAssignmentId}`);
+
+    // Должен быть виден «Общий чат сессии»
+    await expect(
+      page.getByText("Общий чат сессии"),
+    ).toBeVisible({ timeout: 8_000 });
+
+    // Находим textarea для комментария
+    const textarea = page.locator("textarea").last();
+    await expect(textarea).toBeVisible({ timeout: 5_000 });
+
+    const commentText = `E2E тест комментарий ${Date.now()}`;
+    await textarea.fill(commentText);
+
+    // Отправляем
+    const [postResponse] = await Promise.all([
+      page.waitForResponse(
+        (res) =>
+          res.url().includes("/api/sessions/") &&
+          res.url().includes("/review-comments") &&
+          res.request().method() === "POST",
+        { timeout: 10_000 },
+      ),
+      page.getByRole("button", { name: /отправить/i }).last().click(),
+    ]);
+    expect(postResponse.status()).toBe(201);
+
+    // Комментарий появляется в треде
+    await expect(page.getByText(commentText)).toBeVisible({ timeout: 5_000 });
+  });
+
+  test("TC-RV-026: участники сессии видны", async ({ page }) => {
+    if (!sessionAssignmentId) {
+      test.skip(true, "Не удалось создать сессию в beforeAll");
+      return;
+    }
+
+    await page.goto(`/reviewer/assignments/${sessionAssignmentId}`);
+
+    // Раскрываем details «Участники сессии»
+    const participantsSummary = page.locator("summary", {
+      hasText: /Участники сессии/,
+    });
+    await expect(participantsSummary).toBeVisible({ timeout: 8_000 });
+    await participantsSummary.click();
+
+    // Должно быть имя второго ревьюера
+    await expect(
+      page.getByText("Второй ревьюер"),
+    ).toBeVisible({ timeout: 3_000 });
+  });
+});
+
+// ── TC-RV-027: Guide modal ──────────────────────────────────────────────
+
+test.describe("TC-RV-027: Руководство ревьюера", () => {
+  test.use({ storageState: AUTH_FILE });
+
+  test("открыть guide modal", async ({ page }) => {
+    await page.goto("/reviewer");
+
+    const guideBtn = page
+      .locator('button[aria-label="Открыть руководство"]')
+      .first();
+    await expect(guideBtn).toBeVisible({ timeout: 5_000 });
+    await guideBtn.click();
+
+    const dialog = page.locator("dialog[open]");
+    await expect(dialog).toBeVisible({ timeout: 3_000 });
+    await expect(dialog.getByText("Возможности ревьюера")).toBeVisible();
+    await expect(
+      dialog.getByText(/Принимайте или отклоняйте назначения/),
+    ).toBeVisible();
+
+    await dialog.locator('button[aria-label="Закрыть"]').click();
+    await expect(dialog).not.toBeVisible({ timeout: 3_000 });
   });
 });

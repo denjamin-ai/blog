@@ -1,7 +1,13 @@
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { reviewAssignments, articleVersions, articles } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import {
+  reviewAssignments,
+  reviewSessions,
+  articleVersions,
+  articles,
+  users,
+} from "@/lib/db/schema";
+import { eq, and, ne } from "drizzle-orm";
 import { compileMDX } from "@/lib/mdx";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
@@ -50,6 +56,44 @@ export default async function AssignmentDetailPage({
     .where(eq(articles.id, assignment.articleId))
     .get();
 
+  // Load session participants (other reviewers in the same session)
+  let sessionStatus: "open" | "completed" | "cancelled" = "open";
+  let sessionParticipants: { id: string; name: string; status: string }[] = [];
+
+  if (assignment.sessionId) {
+    const reviewSession = await db
+      .select()
+      .from(reviewSessions)
+      .where(eq(reviewSessions.id, assignment.sessionId))
+      .get();
+
+    if (reviewSession) {
+      sessionStatus = reviewSession.status;
+    }
+
+    // Other assignments in the same session
+    const otherAssignments = await db
+      .select({
+        id: reviewAssignments.id,
+        reviewerName: users.name,
+        status: reviewAssignments.status,
+      })
+      .from(reviewAssignments)
+      .leftJoin(users, eq(reviewAssignments.reviewerId, users.id))
+      .where(
+        and(
+          eq(reviewAssignments.sessionId, assignment.sessionId),
+          ne(reviewAssignments.id, id),
+        ),
+      );
+
+    sessionParticipants = otherAssignments.map((a) => ({
+      id: a.id,
+      name: a.reviewerName ?? "Ревьюер",
+      status: a.status,
+    }));
+  }
+
   const content = await compileMDX(version.content);
 
   return (
@@ -64,6 +108,10 @@ export default async function AssignmentDetailPage({
       </div>
       <ReviewAssignmentView
         assignmentId={id}
+        sessionId={assignment.sessionId ?? null}
+        sessionStatus={sessionStatus}
+        sessionParticipants={sessionParticipants}
+        currentUserId={session.userId ?? null}
         status={assignment.status}
         articleTitle={article?.title ?? version.title}
       >

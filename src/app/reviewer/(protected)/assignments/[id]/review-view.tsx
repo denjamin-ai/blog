@@ -5,6 +5,8 @@ import { ReviewProgress } from "@/components/review/review-progress";
 import { ReviewChecklist } from "@/components/review/review-checklist";
 import { DiffView } from "@/components/review/diff-view";
 import { VerdictModal } from "@/components/review/verdict-modal";
+import { SessionReviewThread } from "@/components/review/session-review-thread";
+import type { ReviewSessionStatus } from "@/types";
 
 type Status = "pending" | "accepted" | "declined" | "completed";
 type FilterMode = "all" | "open" | "resolved" | "unanswered";
@@ -24,8 +26,18 @@ interface Comment {
   resolvedBy: string | null;
 }
 
+interface SessionParticipant {
+  id: string;
+  name: string;
+  status: string;
+}
+
 interface Props {
   assignmentId: string;
+  sessionId: string | null;
+  sessionStatus: ReviewSessionStatus;
+  sessionParticipants: SessionParticipant[];
+  currentUserId: string | null;
   status: Status;
   articleTitle: string;
   children: React.ReactNode;
@@ -45,6 +57,20 @@ const STATUS_COLORS: Record<Status, string> = {
   completed: "bg-success-bg text-success",
 };
 
+const PARTICIPANT_STATUS_COLORS: Record<string, string> = {
+  pending: "bg-warning-bg text-warning",
+  accepted: "bg-info-bg text-info",
+  declined: "bg-danger-bg text-danger",
+  completed: "bg-success-bg text-success",
+};
+
+const PARTICIPANT_STATUS_LABELS: Record<string, string> = {
+  pending: "Ожидает",
+  accepted: "Принято",
+  declined: "Отклонено",
+  completed: "Завершено",
+};
+
 function formatDate(unix: number) {
   return new Date(unix * 1000).toLocaleString("ru-RU", {
     day: "numeric",
@@ -56,6 +82,10 @@ function formatDate(unix: number) {
 
 export function ReviewAssignmentView({
   assignmentId,
+  sessionId,
+  sessionStatus,
+  sessionParticipants,
+  currentUserId,
   status: initialStatus,
   articleTitle,
   children,
@@ -83,8 +113,12 @@ export function ReviewAssignmentView({
   const [showVerdictModal, setShowVerdictModal] = useState(false);
   const [resolvingId, setResolvingId] = useState<string | null>(null);
 
-  // Load comments
+  // If session exists, use SessionReviewThread instead of per-assignment chat
+  const useSessionThread = !!sessionId;
+
+  // Load comments (only used when no session)
   const loadComments = useCallback(async () => {
+    if (useSessionThread) return;
     try {
       const res = await fetch(
         `/api/assignments/${assignmentId}/review-comments`,
@@ -98,7 +132,7 @@ export function ReviewAssignmentView({
     } catch {
       // ignore
     }
-  }, [assignmentId]);
+  }, [assignmentId, useSessionThread]);
 
   useEffect(() => {
     loadComments();
@@ -200,7 +234,7 @@ export function ReviewAssignmentView({
     setActionLoading(true);
     try {
       const res = await fetch(`/api/reviewer/assignments/${assignmentId}`, {
-        method: "PUT",
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: next }),
       });
@@ -242,7 +276,6 @@ export function ReviewAssignmentView({
   const resolvedCount = comments.filter((c) => c.resolvedAt !== null).length;
   const openCount = totalComments - resolvedCount;
 
-  // «Без ответа»: reviewer-комментарий верхнего уровня, на который нет ни одного ответа admin
   const unansweredRootIds = new Set(
     comments
       .filter((c) => c.parentId === null && c.isAdminComment === 0)
@@ -258,7 +291,6 @@ export function ReviewAssignmentView({
     if (filterMode === "open") return c.resolvedAt === null;
     if (filterMode === "resolved") return c.resolvedAt !== null;
     if (filterMode === "unanswered") {
-      // показываем сам комментарий и его реплаи
       return (
         unansweredRootIds.has(c.id) ||
         (c.parentId !== null && unansweredRootIds.has(c.parentId))
@@ -377,142 +409,181 @@ export function ReviewAssignmentView({
           )}
         </div>
 
-        {/* Progress bar */}
-        {totalComments > 0 && (
-          <div className="px-4 py-3 border-b border-border shrink-0">
-            <ReviewProgress resolved={resolvedCount} total={totalComments} />
-          </div>
+        {/* Session participants */}
+        {sessionParticipants.length > 0 && (
+          <details className="border-b border-border shrink-0">
+            <summary className="px-4 py-2.5 text-xs font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors select-none list-none flex items-center justify-between">
+              <span>Участники сессии ({sessionParticipants.length})</span>
+              <span className="text-[10px] opacity-50">▼</span>
+            </summary>
+            <div className="px-4 pb-3 flex flex-col gap-1.5">
+              {sessionParticipants.map((p) => (
+                <div key={p.id} className="flex items-center justify-between">
+                  <span className="text-xs font-medium">{p.name}</span>
+                  <span
+                    className={`text-xs px-1.5 py-0.5 rounded-full ${PARTICIPANT_STATUS_COLORS[p.status] ?? "bg-muted text-muted-foreground"}`}
+                  >
+                    {PARTICIPANT_STATUS_LABELS[p.status] ?? p.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </details>
         )}
 
         {/* Checklist */}
         <ReviewChecklist assignmentId={assignmentId} />
 
-        {/* Filter bar */}
-        {totalComments > 0 && (
-          <div className="px-4 py-2 border-b border-border flex flex-wrap gap-1 shrink-0">
-            {(
-              [
-                { key: "all", label: `Все (${totalComments})` },
-                { key: "open", label: `Открытые (${openCount})` },
-                { key: "resolved", label: `Решённые (${resolvedCount})` },
-                {
-                  key: "unanswered",
-                  label: `Без ответа (${unansweredCount})`,
-                },
-              ] as const
-            ).map(({ key, label }) => (
-              <button
-                key={key}
-                onClick={() => setFilterMode(key)}
-                className={`px-2 py-1 text-xs rounded transition-colors ${
-                  filterMode === key
-                    ? "bg-accent text-accent-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Comments thread */}
-        <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-3">
-          {filteredComments.length === 0 && (
-            <p className="text-xs text-muted-foreground text-center py-6">
-              {totalComments === 0
-                ? "Нет комментариев"
-                : filterMode === "unanswered"
-                  ? "Все замечания получили ответ"
-                  : "Нет комментариев в этой категории"}
-            </p>
-          )}
-          {filteredComments.map((c) => (
-            <div
-              key={c.id}
-              className={`flex flex-col gap-1 ${c.parentId ? "ml-4 pl-3 border-l-2 border-border" : ""}`}
-            >
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-medium">
-                  {c.isAdminComment ? "Редактор" : "Вы"}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {formatDate(c.createdAt)}
-                </span>
-                {/* Resolved badge */}
-                <span
-                  className={`text-xs px-1.5 py-0.5 rounded-full ${
-                    c.resolvedAt !== null
-                      ? "bg-success-bg text-success"
-                      : "bg-danger-bg text-danger"
-                  }`}
-                >
-                  {c.resolvedAt !== null ? "🟢 Решён" : "🔴 Открыт"}
-                </span>
-                {/* Reopen button for reviewer on resolved comments */}
-                {c.resolvedAt !== null &&
-                  !c.isAdminComment &&
-                  (status === "pending" || status === "accepted") && (
-                    <button
-                      onClick={() => handleReopen(c.id)}
-                      disabled={resolvingId === c.id}
-                      className="text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
-                    >
-                      Переоткрыть
-                    </button>
-                  )}
-              </div>
-              {c.quotedText && (
-                <blockquote className="border-l-4 border-accent/40 pl-3 text-xs text-muted-foreground italic truncate">
-                  {c.quotedText}
-                </blockquote>
-              )}
-              <p className="text-sm whitespace-pre-wrap">{c.content}</p>
+        {/* Chat section */}
+        {useSessionThread ? (
+          /* Session-level shared chat */
+          <div className="flex-1 overflow-hidden flex flex-col">
+            <div className="px-4 py-2 border-b border-border shrink-0">
+              <p className="text-xs font-medium text-muted-foreground">
+                Общий чат сессии
+              </p>
             </div>
-          ))}
-          <div ref={commentsEndRef} />
-        </div>
-
-        {/* Comment form */}
-        {(status === "pending" || status === "accepted") && (
-          <form
-            onSubmit={submitComment}
-            className="border-t border-border px-4 py-3 flex flex-col gap-2 shrink-0"
-          >
-            {quotedText && (
-              <div className="flex items-start gap-2">
-                <blockquote className="flex-1 border-l-4 border-accent/50 pl-3 text-xs text-muted-foreground italic line-clamp-2">
-                  {quotedText}
-                </blockquote>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setQuotedText(null);
-                    setQuotedAnchor(null);
-                  }}
-                  className="text-muted-foreground hover:text-foreground text-xs shrink-0"
-                  aria-label="Убрать цитату"
-                >
-                  ✕
-                </button>
+            <div className="flex-1 overflow-hidden">
+              <SessionReviewThread
+                sessionId={sessionId!}
+                sessionStatus={sessionStatus}
+                currentUserId={currentUserId}
+                isAdmin={false}
+              />
+            </div>
+          </div>
+        ) : (
+          /* Legacy per-assignment chat */
+          <>
+            {totalComments > 0 && (
+              <div className="px-4 py-3 border-b border-border shrink-0">
+                <ReviewProgress resolved={resolvedCount} total={totalComments} />
               </div>
             )}
-            <textarea
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              rows={3}
-              placeholder="Добавить комментарий…"
-              className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-accent text-sm resize-none"
-            />
-            {error && <p className="text-danger text-xs">{error}</p>}
-            <button
-              type="submit"
-              disabled={submitting || !commentText.trim()}
-              className="self-end px-4 py-1.5 text-xs font-medium bg-accent text-accent-foreground rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
-            >
-              {submitting ? "Отправка…" : "Отправить"}
-            </button>
-          </form>
+
+            {totalComments > 0 && (
+              <div className="px-4 py-2 border-b border-border flex flex-wrap gap-1 shrink-0">
+                {(
+                  [
+                    { key: "all", label: `Все (${totalComments})` },
+                    { key: "open", label: `Открытые (${openCount})` },
+                    { key: "resolved", label: `Решённые (${resolvedCount})` },
+                    {
+                      key: "unanswered",
+                      label: `Без ответа (${unansweredCount})`,
+                    },
+                  ] as const
+                ).map(({ key, label }) => (
+                  <button
+                    key={key}
+                    onClick={() => setFilterMode(key)}
+                    className={`px-2 py-1 text-xs rounded transition-colors ${
+                      filterMode === key
+                        ? "bg-accent text-accent-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-3">
+              {filteredComments.length === 0 && (
+                <p className="text-xs text-muted-foreground text-center py-6">
+                  {totalComments === 0
+                    ? "Нет комментариев"
+                    : filterMode === "unanswered"
+                      ? "Все замечания получили ответ"
+                      : "Нет комментариев в этой категории"}
+                </p>
+              )}
+              {filteredComments.map((c) => (
+                <div
+                  key={c.id}
+                  className={`flex flex-col gap-1 ${c.parentId ? "ml-4 pl-3 border-l-2 border-border" : ""}`}
+                >
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-medium">
+                      {c.isAdminComment ? "Редактор" : "Вы"}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {formatDate(c.createdAt)}
+                    </span>
+                    <span
+                      className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
+                        c.resolvedAt !== null
+                          ? "bg-success-bg text-success"
+                          : "bg-danger-bg text-danger"
+                      }`}
+                    >
+                      {c.resolvedAt !== null ? "Решён" : "Открыт"}
+                    </span>
+                    {c.resolvedAt !== null &&
+                      !c.isAdminComment &&
+                      (status === "pending" || status === "accepted") && (
+                        <button
+                          onClick={() => handleReopen(c.id)}
+                          disabled={resolvingId === c.id}
+                          className="text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                        >
+                          Переоткрыть
+                        </button>
+                      )}
+                  </div>
+                  {c.quotedText && (
+                    <blockquote className="border-l-4 border-accent/40 pl-3 text-xs text-muted-foreground italic truncate">
+                      {c.quotedText}
+                    </blockquote>
+                  )}
+                  <p className="text-sm whitespace-pre-wrap">{c.content}</p>
+                </div>
+              ))}
+              <div ref={commentsEndRef} />
+            </div>
+
+            {(status === "pending" || status === "accepted") && (
+              <form
+                onSubmit={submitComment}
+                className="border-t border-border px-4 py-3 flex flex-col gap-2 shrink-0"
+              >
+                {quotedText && (
+                  <div className="flex items-start gap-2">
+                    <blockquote className="flex-1 border-l-4 border-accent/50 pl-3 text-xs text-muted-foreground italic line-clamp-2">
+                      {quotedText}
+                    </blockquote>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setQuotedText(null);
+                        setQuotedAnchor(null);
+                      }}
+                      className="text-muted-foreground hover:text-foreground text-xs shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded"
+                      aria-label="Убрать цитату"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
+                <textarea
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  rows={3}
+                  placeholder="Добавить комментарий…"
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-accent text-sm resize-none"
+                />
+                {error && <p className="text-danger text-xs">{error}</p>}
+                <button
+                  type="submit"
+                  disabled={submitting || !commentText.trim()}
+                  className="self-end px-4 py-1.5 text-xs font-medium bg-accent text-accent-foreground rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+                >
+                  {submitting ? "Отправка…" : "Отправить"}
+                </button>
+              </form>
+            )}
+          </>
         )}
       </aside>
 

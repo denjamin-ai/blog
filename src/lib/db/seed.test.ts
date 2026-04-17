@@ -23,6 +23,7 @@ const now = Math.floor(Date.now() / 1000);
 const AUTHOR_ID = "01TEST0000AUTHORUSER0001";
 const READER_ID = "01TEST0000READERUSER0001";
 const REVIEWER_ID = "01TEST0000REVIEWERUSER01";
+const REVIEWER2_ID = "01TEST0000REVIEWERUSER02";
 
 async function seed() {
   // ── Profile ──────────────────────────────────────────────────────────────
@@ -114,8 +115,24 @@ async function seed() {
       set: { name: "Тестовый ревьюер", updatedAt: now },
     });
 
+  await db
+    .insert(users)
+    .values({
+      id: REVIEWER2_ID,
+      username: "reviewer2",
+      name: "Второй ревьюер",
+      role: "reviewer",
+      passwordHash: PASSWORD_HASH,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .onConflictDoUpdate({
+      target: users.username,
+      set: { name: "Второй ревьюер", updatedAt: now },
+    });
+
   console.log(
-    "✅ Users seeded (reader / author / reviewer — пароль: password)",
+    "✅ Users seeded (reader / author / reviewer / reviewer2 — пароль: password)",
   );
 
   // ── Статьи ────────────────────────────────────────────────────────────────
@@ -317,6 +334,7 @@ interface BlogPost {
   console.log("  reader   / password  (role: reader)");
   console.log("  author   / password  (role: author)");
   console.log("  reviewer / password  (role: reviewer)");
+  console.log("  reviewer2 / password  (role: reviewer)");
   console.log("  admin    / (из ADMIN_PASSWORD_HASH в .env.test)");
 }
 

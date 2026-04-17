@@ -58,6 +58,7 @@ export default function AdminArticleModerationPage() {
   const [loadFailed, setLoadFailed] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [difficulty, setDifficulty] = useState<string | null>(null);
   const [existingChangelog, setExistingChangelog] = useState<ChangelogEntry[]>(
     [],
   );
@@ -121,6 +122,7 @@ export default function AdminArticleModerationPage() {
     setTitle(data.title);
     setSlug(data.slug);
     setAuthorName(data.authorName ?? null);
+    setDifficulty(data.difficulty ?? null);
     setStatus(data.status);
     setScheduledAt(data.scheduledAt ?? null);
     setUpdatedAt(data.updatedAt ?? 0);
@@ -227,11 +229,11 @@ export default function AdminArticleModerationPage() {
       (a) => a.status === "pending" || a.status === "accepted",
     ) ?? null;
 
-  async function handleSendForReview(reviewer: {
+  async function handleSendForReview(reviewers: {
     id: string;
     name: string;
     username: string;
-  }) {
+  }[]) {
     setError("");
     setSaving(true);
     try {
@@ -240,7 +242,7 @@ export default function AdminArticleModerationPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           saveMode: "send_for_review",
-          reviewerId: reviewer.id,
+          reviewerIds: reviewers.map((r) => r.id),
         }),
       });
       if (res.ok) {
@@ -718,9 +720,9 @@ export default function AdminArticleModerationPage() {
       <ReviewerPickerModal
         open={showReviewModal}
         onClose={() => setShowReviewModal(false)}
-        onSelect={(reviewer) => {
-          setShowReviewModal(false);
-          handleSendForReview(reviewer);
+        difficulty={difficulty as import("@/types").DifficultyLevel | null}
+        onSelect={(reviewers) => {
+          handleSendForReview(reviewers);
         }}
       />
     </div>

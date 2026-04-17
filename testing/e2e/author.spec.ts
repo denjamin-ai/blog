@@ -6,6 +6,8 @@
  * US-A22: Вставка LaTeX-формулы (P2)
  * US-A23: Live-preview работает (P2)
  * US-G11: Диаграмма рендерится (P2)
+ * TC-AU-025: Отправка статьи на ревью 2 ревьюерам
+ * TC-AU-026: Guide modal
  */
 
 import { test, expect } from "@playwright/test";
@@ -263,5 +265,110 @@ test.describe("US-G11: Mermaid-диаграмма", () => {
     // Даём до 25s — динамический import("mermaid") может быть медленным
     const diagram = page.locator(".mermaid svg, [class*='mermaid'] svg");
     await expect(diagram.first()).toBeVisible({ timeout: 25_000 });
+  });
+});
+
+// ── TC-AU-025: Отправка на ревью 2 ревьюерам ───────────────────────────
+
+test.describe("TC-AU-025: Отправка статьи на ревью 2 ревьюерам", () => {
+  test.use({ storageState: AUTH_FILE });
+
+  test("автор отправляет статью через ReviewerPickerModal", async ({
+    page,
+  }) => {
+    // Создаём черновик через API (автор может POST /api/articles)
+    const createResp = await page.request.post("/api/articles", {
+      data: {
+        title: "E2E author review session",
+        slug: `e2e-au-session-${Date.now()}`,
+        content: "## Контент для ревью\n\nТестовый параграф.",
+        tags: [],
+        status: "draft",
+      },
+      headers: { Origin: "http://localhost:3001" },
+    });
+    expect(createResp.status()).toBe(201);
+    const { id: articleId } = await createResp.json();
+
+    // Открываем редактирование
+    await page.goto(`/author/articles/${articleId}`);
+
+    // Кликаем «На ревью»
+    const reviewBtn = page.getByRole("button", { name: /на ревью/i });
+    await expect(reviewBtn).toBeVisible({ timeout: 5_000 });
+    await reviewBtn.click();
+
+    // Модал открылся
+    const dialog = page.locator('dialog[aria-label="Выбрать ревьюеров"]');
+    await expect(dialog).toBeVisible({ timeout: 3_000 });
+
+    // Поиск ревьюеров
+    const searchInput = dialog.locator(
+      'input[placeholder*="Имя или никнейм"]',
+    );
+    await searchInput.fill("ревьюер");
+
+    await page.waitForResponse(
+      (res) => res.url().includes("/api/reviewers?search=") && res.ok(),
+      { timeout: 5_000 },
+    );
+
+    // Выбираем обоих
+    const firstReviewer = dialog.locator("button", {
+      hasText: "Тестовый ревьюер",
+    });
+    const secondReviewer = dialog.locator("button", {
+      hasText: "Второй ревьюер",
+    });
+
+    await expect(firstReviewer).toBeVisible({ timeout: 3_000 });
+    await firstReviewer.click();
+
+    await expect(secondReviewer).toBeVisible({ timeout: 3_000 });
+    await secondReviewer.click();
+
+    // Подтверждаем
+    const [putResponse] = await Promise.all([
+      page.waitForResponse(
+        (res) =>
+          res.url().includes("/api/articles/") &&
+          res.request().method() === "PUT",
+        { timeout: 10_000 },
+      ),
+      dialog.getByRole("button", { name: /подтвердить/i }).click(),
+    ]);
+    expect(putResponse.status()).toBe(200);
+
+    // Проверяем что назначения появились
+    await expect(
+      page.getByText(/назначения на ревью/i),
+    ).toBeVisible({ timeout: 5_000 });
+  });
+});
+
+// ── TC-AU-026: Guide modal ──────────────────────────────────────────────
+
+test.describe("TC-AU-026: Руководство автора", () => {
+  test.use({ storageState: AUTH_FILE });
+
+  test("открыть и проверить guide modal", async ({ page }) => {
+    await page.goto("/author");
+
+    const guideBtn = page
+      .locator('button[aria-label="Открыть руководство"]')
+      .first();
+    await expect(guideBtn).toBeVisible({ timeout: 5_000 });
+    await guideBtn.click();
+
+    const dialog = page.locator("dialog[open]");
+    await expect(dialog).toBeVisible({ timeout: 3_000 });
+    await expect(dialog.getByText("Возможности автора")).toBeVisible();
+    await expect(
+      dialog.getByText("Пишите статьи в формате MDX"),
+    ).toBeVisible();
+
+    // Закрыть через Escape
+    await page.keyboard.press("Escape");
+    await expect(dialog).not.toBeVisible({ timeout: 3_000 });
   });
 });

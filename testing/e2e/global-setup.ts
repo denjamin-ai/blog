@@ -98,6 +98,22 @@ async function globalSetup(_config: FullConfig) {
     console.log("[global-setup] ✅ Reviewer auth saved");
   }
 
+  // ── Reviewer 2 ────────────────────────────────────────────────────────────
+  {
+    const ctx = await browser.newContext();
+    const page = await ctx.newPage();
+    await page.goto(`${BASE_URL}/login`);
+    await page.locator('input[autocomplete="username"]').fill("reviewer2");
+    await page
+      .locator('input[autocomplete="current-password"]')
+      .fill("password");
+    await page.locator('button[type="submit"]').click();
+    await page.waitForURL(`${BASE_URL}/reviewer`, { timeout: 10_000 });
+    await ctx.storageState({ path: path.join(AUTH_DIR, "reviewer2.json") });
+    await ctx.close();
+    console.log("[global-setup] ✅ Reviewer2 auth saved");
+  }
+
   await browser.close();
   console.log("[global-setup] Готово. Запускаю тесты...");
 }

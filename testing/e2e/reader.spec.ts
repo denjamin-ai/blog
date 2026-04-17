@@ -5,6 +5,7 @@
  * US-R2: Комментарий к статье
  * US-R8: Голосование за статью (P2)
  * US-R9: Закладки (P2)
+ * TC-RD-010: Guide modal (P1)
  */
 
 import { test, expect } from "@playwright/test";
@@ -188,5 +189,31 @@ test.describe("US-R9: Закладки", () => {
     // Не должно быть редиректа на /login
     expect(page.url()).not.toContain("/login");
     await expect(page.locator("main, [role='main']").first()).toBeVisible();
+  });
+});
+
+// ── TC-RD-010: Guide modal ──────────────────────────────────────────────
+
+test.describe("TC-RD-010: Руководство читателя", () => {
+  test.use({ storageState: AUTH_FILE });
+
+  test("открыть guide modal", async ({ page }) => {
+    await page.goto("/blog");
+
+    const guideBtn = page
+      .locator('button[aria-label="Открыть руководство"]')
+      .first();
+    await expect(guideBtn).toBeVisible({ timeout: 5_000 });
+    await guideBtn.click();
+
+    const dialog = page.locator("dialog[open]");
+    await expect(dialog).toBeVisible({ timeout: 3_000 });
+    await expect(dialog.getByText("Возможности читателя")).toBeVisible();
+    await expect(
+      dialog.getByText(/Оставляйте комментарии к статьям/),
+    ).toBeVisible();
+
+    await dialog.locator('button[aria-label="Закрыть"]').click();
+    await expect(dialog).not.toBeVisible({ timeout: 3_000 });
   });
 });

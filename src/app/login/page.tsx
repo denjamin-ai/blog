@@ -38,6 +38,7 @@ export default function LoginPage() {
       } else {
         router.push("/");
       }
+      router.refresh();
     } catch {
       setError("Ошибка сети");
     } finally {

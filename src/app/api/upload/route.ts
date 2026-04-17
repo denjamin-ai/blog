@@ -4,6 +4,7 @@ import { writeFile, mkdir, unlink } from "fs/promises";
 import path from "path";
 import { ulid } from "ulid";
 import { fileTypeFromBuffer } from "file-type";
+import imageSize from "image-size";
 import ffmpeg from "fluent-ffmpeg";
 import ffprobeInstaller from "@ffprobe-installer/ffprobe";
 
@@ -81,6 +82,19 @@ export async function POST(request: Request) {
     );
   }
 
+  // Определение размеров изображения
+  let imageWidth: number | undefined;
+  let imageHeight: number | undefined;
+  if (kind === "image") {
+    try {
+      const dims = imageSize(buffer);
+      imageWidth = dims.width;
+      imageHeight = dims.height;
+    } catch {
+      // не критично — размеры опциональны
+    }
+  }
+
   // Валидация длительности видео через ffprobe
   let duration: number | undefined;
   if (kind === "video") {
@@ -110,5 +124,6 @@ export async function POST(request: Request) {
     url: `/uploads/${filename}`,
     type: kind,
     ...(duration !== undefined ? { duration } : {}),
+    ...(imageWidth !== undefined ? { width: imageWidth, height: imageHeight } : {}),
   });
 }

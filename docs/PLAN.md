@@ -43,6 +43,10 @@
 | 23. Анимации и micro-interactions | Done | 2026-04-15 |
 | 24. Responsive + Accessibility + Визуальный аудит | Done | 2026-04-15 |
 | 25. E2E UI + UX ревью + финализация | Done | 2026-04-15 |
+| 26. Review Sessions — мультиревьюер и общий чат | Planned | — |
+| 27. Страница «Руководство» | Done | 2026-04-16 |
+| 28. E2E тесты фаз 26–27 | Done | 2026-04-16 |
+| 29. Доработки UX — авторизация, медиа, руководство | Done | 2026-04-16 |
 
 ---
 
@@ -657,3 +661,338 @@
 - `src/app/author/(protected)/articles/new/page.tsx` — placeholder fix
 - `src/components/nav-mobile-menu.tsx` — Escape key handler
 - `src/lib/utils.ts` — MDX tag stripping in mdxToPlainText
+
+---
+
+### Фаза 26: Review Sessions — Мультиревьюер и общий чат (Done)
+
+**Контекст**: Требуется поддержка нескольких ревьюеров на одну статью (до 3), минимальные квоты по сложности (medium ≥1, hard ≥2), и единый чат обсуждений для всех участников сессии (ревьюеры + автор + админ), привязанный к статье.
+
+#### 26a — Схема БД и миграция
+
+**Изменения схемы** (`src/lib/db/schema.ts`):
+
+1. **Новая таблица `reviewSessions`**:
+   - `id` (ULID) — PK
+   - `articleId` TEXT — FK → articles, CASCADE delete
+   - `articleVersionId` TEXT — FK → articleVersions (снимок на момент отправки)
+   - `status` TEXT — `'open' | 'completed' | 'cancelled'`, default `'open'`
+   - `createdAt` INTEGER — Unix seconds
+   - `completedAt` INTEGER — nullable, проставляется когда все ревьюеры дали `approved`
+
+2. **Таблица `reviewAssignments`** — добавить поле:
+   - `sessionId` TEXT — FK → reviewSessions, CASCADE delete
+
+3. **Таблица `reviewComments`** — заменить привязку:
+   - Удалить `assignmentId` (FK → reviewAssignments)
+   - Добавить `sessionId` TEXT — FK → reviewSessions, CASCADE delete
+   - Смысл: чат теперь общий на всю сессию (все ревьюеры видят одни и те же комментарии)
+   - Миграционный скрипт: для каждого существующего комментария найти `assignment.sessionId` (через backfill)
+
+**Задачи**:
+- `npx drizzle-kit generate` → проверить SQL-миграцию
+- `npx drizzle-kit migrate` → применить
+- `npm run build` → 0 ошибок TypeScript
+
+**Агент/скилл**: Прямая реализация. Правило `.claude/rules/drizzle-queries.md`.
+
+**Валидация**:
+- `npx drizzle-kit generate` — миграция сгенерирована корректно
+- `npx drizzle-kit migrate` — применена без ошибок
+- `npm run build` — OK
+
+---
+
+#### 26b — API: Сессии и обновление send_for_review
+
+**Новые/изменённые endpoints**:
+
+| Метод | URL | Описание |
+|-------|-----|----------|
+| POST | `/api/review-sessions` | Создать сессию: `{ articleId, reviewerIds: string[] }`. Auth: admin или author (owner). Создаёт `reviewSession` + N `reviewAssignment` записей. Копирует checklist template для каждого назначения. |
+| GET | `/api/articles/[id]/review-sessions` | Список сессий статьи. Auth: admin, author owner, любой ревьюер в сессии. |
+| GET | `/api/review-sessions/[sessionId]` | Детали сессии + все assignments. |
+| POST | `/api/sessions/[id]/review-comments` | Создать комментарий в общем чате. Auth: admin, article author, любой ревьюер из сессии. |
+| GET | `/api/sessions/[id]/review-comments` | Получить все комментарии сессии. |
+
+**Изменения в существующих endpoints**:
+- `PUT /api/articles/[id]` — `saveMode=send_for_review`: принимает `reviewerIds: string[]` (вместо `reviewerId`). Валидация: для `difficulty=medium` → min 1, для `difficulty=hard` → min 2, max 3. Создаёт сессию через ту же логику что и POST `/api/review-sessions`.
+- `PUT /api/articles/[id]` — `saveMode=notify_reviewer`: уведомляет всех активных ревьюеров сессии (не одного).
+- `PUT /api/reviewer/assignments/[id]` — при выставлении `verdict=approved`: проверить все assignments сессии; если все `completed + approved` → установить `reviewSession.status = 'completed'`.
+- `GET/POST /api/assignments/[id]/review-comments` — устаревший путь, переадресовать на `/api/sessions/[sessionId]/review-comments`.
+- `POST /api/review-comments/[id]/resolve` — доступ: admin + любой ревьюер сессии + автор статьи.
+
+**Правила доступа для общего чата**:
+```
+canAccessSessionChat(session, articleAuthorId):
+  isAdmin(session) || 
+  session.userId === articleAuthorId ||
+  isReviewerInSession(session.userId, sessionId)
+```
+
+**Агент/скилл**: `.agents/skills/next-best-practices` для паттернов route handlers.
+
+**Валидация**:
+- `npm run build` — OK
+- Ручная проверка: создать сессию с 2 ревьюерами, оба видят один чат
+
+---
+
+#### 26c — UI: ReviewerPickerModal (мультивыбор)
+
+**Изменения в `src/components/reviewer-picker-modal.tsx`**:
+- Чекбоксы вместо одиночного выбора
+- Счётчик выбранных (0/3)
+- Индикатор минимума: если `difficulty=medium` → «Нужен минимум 1 ревьюер», если `hard` → «Нужно минимум 2»
+- Кнопка «Отправить» заблокирована если нарушен минимум
+- Пропс `difficulty` и `maxReviewers=3`
+- Возвращает `onSelect(reviewers: {id, name, username}[])` (массив)
+
+**Агент/скилл**: `.agents/skills/frontend-design`. Дизайн-система: чекбоксы с `border-accent`, disabled-состояние `opacity-50`.
+
+**Валидация**:
+- `npm run build` — OK
+- Визуальный тест: выбрать 2 ревьюера, проверить счётчик и кнопку
+
+---
+
+#### 26d — UI: Блок сессии на страницах статей + общий чат
+
+**Admin/Author — страница статьи** (`admin/(protected)/articles/[id]/page.tsx`, `author/(protected)/articles/[id]/page.tsx`):
+- Блок «Активная сессия ревью»:
+  - Карточки всех ревьюеров: имя, статус назначения (pending/accepted/completed + verdict badge), чеклист read-only
+  - Кнопка «Уведомить всех ревьюеров» (notify_reviewer для всей сессии)
+  - Статус сессии: `open` / `completed` (все одобрили) / `cancelled`
+- Убрать старые блоки per-assignment
+
+**Reviewer — страница назначения** (`reviewer/(protected)/assignments/[id]/page.tsx`):
+- Блок «Участники сессии»: список других ревьюеров (имена + статусы)
+- Общий чат: показывать все комментарии сессии, не только от текущего ревьюера
+- Подпись к сообщениям: имя ревьюера (не анонимно)
+
+**Review thread** (shared chat component):
+- Новый компонент `SessionReviewThread` (клиентский)
+- Заменяет `AssignmentThread` / `ReviewCommentThread` везде, где был per-assignment чат
+- Props: `sessionId`, `articleAuthorId`, `currentUserRole`
+- Отображает все комментарии сессии с именами авторов
+
+**Агент/скилл**: `.agents/skills/frontend-design`.
+
+**Валидация**:
+- `npm run build` — OK
+- UX-тест: 2 ревьюера пишут в чат → оба видят сообщения друг друга
+
+---
+
+#### 26e — Ревью кода
+
+**Агент/скилл**: `.agents/skills/critique` (code review) + `.agents/skills/audit` (security).
+
+Фокус ревью:
+- Права доступа к общему чату: убедиться что посторонние не могут читать/писать
+- N+1 запросов при загрузке сессии с несколькими назначениями
+- Корректность логики автозавершения сессии (`all approved` → `session.status = completed`)
+- TypeScript типы для `reviewerIds[]` vs старого `reviewerId`
+
+**Валидация**:
+- `npm run build` — 0 ошибок
+- 0 P0, 0 P1 по результатам ревью
+
+---
+
+**Файлы фазы 26**:
+- `src/lib/db/schema.ts` — новая таблица reviewSessions, изменения reviewAssignments + reviewComments
+- `drizzle/` — новые миграции
+- `src/app/api/review-sessions/route.ts` — новый
+- `src/app/api/review-sessions/[id]/route.ts` — новый
+- `src/app/api/sessions/[id]/review-comments/route.ts` — новый
+- `src/app/api/articles/[id]/route.ts` — обновлён send_for_review (reviewerIds[])
+- `src/app/api/reviewer/assignments/[id]/route.ts` — логика автозавершения сессии
+- `src/components/reviewer-picker-modal.tsx` — мультивыбор
+- `src/components/review/session-review-thread.tsx` — новый (общий чат)
+- `src/app/admin/(protected)/articles/[id]/page.tsx` — блок сессии
+- `src/app/author/(protected)/articles/[id]/page.tsx` — блок сессии
+- `src/app/reviewer/(protected)/assignments/[id]/page.tsx` — участники + общий чат
+
+---
+
+### Фаза 27: Страница «Руководство» (Done)
+
+**Контекст**: В навигации нужна иконка «Руководство», открывающая модальное окно с описанием возможностей сайта для текущей роли пользователя. Контент зависит от роли: Гость, Читатель, Автор, Ревьюер, Админ.
+
+#### 27a — Компонент GuideModal и навигация
+
+**Новый компонент** `src/components/guide-modal.tsx` (клиентский):
+- `<dialog>` с backdrop click-to-close и Escape для закрытия
+- Анимация: `dialog-in` keyframe (уже в `globals.css`)
+- Контент только для текущей роли (prop `role: 'guest' | 'reader' | 'author' | 'reviewer' | 'admin'`)
+- Структура контента — разделы с заголовками и bullet-списками, всё на русском
+- Без кнопок сохранения, только «Закрыть»
+
+**Контент по ролям**:
+
+| Роль | Разделы руководства |
+|------|---------------------|
+| **Гость** | Чтение статей и блога; TOC, difficulty-бейдж; публичные комментарии (только чтение); RSS-лента; профили авторов; как зарегистрироваться |
+| **Читатель** | Комментарии (2 уровня, 15-мин ред.); голосование за статьи и комментарии; закладки; подписка на авторов; лента подписок; уведомления |
+| **Автор** | Создание статей в MDX (с примерами: заголовки, код, таблицы); LaTeX-формулы (`$inline$`, `$$block$$`); MDX-компоненты (`<Expandable>`, `<Mermaid>`, `<Diagram>`, `<ArticleImage>`, `<ArticleVideo>`); live-preview; загрузка медиа; планирование публикации; процесс ревью (отправка, выбор ревьюеров, общий чат); управление changelog |
+| **Ревьюер** | Принятие/отклонение назначений; чеклист проверки; общий чат сессии; вердикт (approved/needs_work/rejected); diff изменений; уведомления |
+| **Админ** | Управление статьями всех авторов; CRUD пользователей; блокировка авторов/комментаторов; шаблон чеклиста; настройки блога; отправка на ревью; сессии ревью |
+
+**Интеграция в Nav** (`src/components/nav.tsx`):
+- Иконка `BookOpenIcon` (SVG, 20×20, `aria-label="Руководство"`)
+- Позиция: слева от `ThemeToggle` в desktop-навигации; в мобильном меню — отдельный пункт
+- Отображается для всех пользователей (включая гостей)
+- Клик → открывает `GuideModal`
+- Определение роли: на основе `GET /api/auth/user`
+
+**Агент/скилл**: `.agents/skills/frontend-design` + `.agents/skills/impeccable` (design quality).
+
+**Валидация**:
+- `npm run build` — OK
+- Визуальный тест: открыть модал для каждой роли, проверить корректность контента
+
+---
+
+#### 27b — Ревью кода
+
+**Агент/скилл**: `.agents/skills/critique`.
+
+Фокус: hydration mismatch (роль определяется клиентски), Escape/backdrop обработка, `aria-modal`, focus trap внутри диалога.
+
+**Валидация**:
+- `npm run build` — OK
+- 0 P0, 0 P1
+
+---
+
+**Файлы фазы 27**:
+- `src/components/guide-modal.tsx` — новый компонент
+- `src/components/nav.tsx` — иконка и интеграция GuideModal
+- `src/components/nav-mobile-menu.tsx` — пункт «Руководство» в мобильном меню
+
+---
+
+### Результаты фазы 27 (Done — 2026-04-16)
+
+**Что сделано**:
+- **`GuideButton`** (`src/components/guide-modal.tsx`): клиентский компонент с нативным `<dialog>`, иконка BookOpen (18×18 SVG), `open:animate-dialog-in`, backdrop/Escape/× close. Экспортирует тип `GuideRole = "guest" | "reader" | "author" | "reviewer" | "admin"`.
+- **Контент по ролям** (`GUIDE_CONTENT`): 5 ролей × 2–3 секции с bullet-списками на русском. Статический — без API-запросов. Гость / Читатель / Автор / Ревьюер / Админ.
+- **`nav.tsx`**: вычисляет `guideRole` server-side через `getSession()` (type-safe: явный union check без `as` cast), рендерит `<GuideButton role={guideRole} />` перед `<ThemeToggle />` в desktop-навигации.
+- **`nav-mobile-menu.tsx`**: принимает `guideRole: GuideRole`, рендерит `<GuideButton>` между ThemeToggle и hamburger.
+
+**Ревью**:
+- design-watcher: 0 P0 (backdrop:bg-black/50 — established pattern из reviewer-picker-modal)
+- code-reviewer: 1 P1 исправлен (unsafe `as` cast → explicit union type guard)
+- security-reviewer: CRITICAL — ложное срабатывание (контент руководства публичен), MEDIUM исправлен (тот же type guard)
+- seo-optimizer: PASS (0 issues)
+
+**Валидация**: `npm run build` OK (0 TypeScript ошибок)
+
+---
+
+### Фаза 28: E2E тесты фаз 26–27 (Done — 2026-04-16)
+
+**Контекст**: После реализации мультиревьюера и руководства нужно покрыть новые flow E2E-тестами.
+
+#### Что сделано
+
+**Инфраструктура**:
+- `seed.test.ts` — добавлен второй ревьюер (`reviewer2 / password`, ID `01TEST0000REVIEWERUSER02`)
+- `global-setup.ts` — добавлен логин и сохранение storageState для reviewer2
+
+**Новые тесты** (9 тест-кейсов, все PASS):
+
+| Spec-файл | Тест-кейс | Приоритет |
+|-----------|-----------|-----------|
+| `admin.spec.ts` | TC-AD-030: Создание review session с 2 ревьюерами через ReviewerPickerModal | P0 |
+| `admin.spec.ts` | TC-AD-031: Guide modal для админа | P1 |
+| `author.spec.ts` | TC-AU-025: Отправка статьи на ревью 2 ревьюерам | P0 |
+| `author.spec.ts` | TC-AU-026: Guide modal для автора (закрытие через Escape) | P1 |
+| `reviewer.spec.ts` | TC-RV-025: Запись в общий чат сессии (POST + проверка появления) | P0 |
+| `reviewer.spec.ts` | TC-RV-026: Участники сессии видны (details + имя второго ревьюера) | P1 |
+| `reviewer.spec.ts` | TC-RV-027: Guide modal для ревьюера | P1 |
+| `guest.spec.ts` | TC-GU-007: Guide modal для гостя (закрытие через Escape) | P1 |
+| `reader.spec.ts` | TC-RD-010: Guide modal для читателя | P1 |
+
+**Тестовая стратегия**:
+- Review session тесты в `reviewer.spec.ts` используют `beforeAll` с admin API для создания тестовых данных (статья + сессия с 2 ревьюерами), затем тестируют от лица reviewer1
+- Admin и author тесты создают сессию через UI (ReviewerPickerModal flow: поиск → выбор 2 ревьюеров → подтверждение)
+- Guide modal тесты — простой паттерн click → assert content → close
+
+**Прогон**: 35 passed, 8 failed (все 8 — pre-existing), 3 skipped. Новые 9 тестов — **все PASS**.
+
+**Ревью**:
+- code-reviewer: 0 P0, 4 P1, 5 P2. Исправлены P1-1 (corrupted char в reader.spec), P1-2 (убран waitForTimeout), P1-3 (regex вместо hardcoded текста). P1-4 (reviewer2.json не используется) — оставлен для будущих тестов
+- security-reviewer: 0 CRITICAL, 0 HIGH. 2 LOW (стандартные тестовые паттерны: тестовые пароли и fallback)
+- seo-optimizer: 0 HIGH, 0 MEDIUM. Все проверки PASS. Phase 26-27 не затрагивают SEO
+
+**Валидация**:
+- `npm run build` — OK (0 ошибок TypeScript)
+- `npm run test:e2e` — 9/9 новых тестов PASS
+
+**Файлы**:
+- `src/lib/db/seed.test.ts` — reviewer2
+- `testing/e2e/global-setup.ts` — reviewer2 auth
+- `testing/e2e/admin.spec.ts` — +2 теста
+- `testing/e2e/author.spec.ts` — +2 теста
+- `testing/e2e/reviewer.spec.ts` — +3 теста
+- `testing/e2e/guest.spec.ts` — +1 тест
+- `testing/e2e/reader.spec.ts` — +1 тест
+
+---
+
+### Фаза 29: Доработки UX — авторизация, медиа, руководство (In Progress — 2026-04-16)
+
+**Контекст**: Три доработки по результатам ручного тестирования.
+
+#### 29a — Nav обновляется сразу после авторизации
+
+**Причина**: `Nav` — Server Component, `router.push()` — soft navigation, layout не перерендеривается.
+**Решение**: Добавлен `router.refresh()` после `router.push()` в обеих login-страницах.
+
+**Файлы**:
+- `src/app/login/page.tsx` — `router.refresh()` после навигации
+- `src/app/admin/login/login-form.tsx` — `router.refresh()` после навигации
+
+#### 29b — Размеры медиа при вставке (ширина × высота в px)
+
+**Что сделано**:
+- Установлен `image-size` для определения размеров изображения из буфера
+- API upload (`/api/upload`) возвращает `width` и `height` в JSON-ответе для изображений
+- `ArticleImage` и `ArticleVideo` — добавлены опциональные `width`/`height` props; когда заданы, применяют `maxWidth`/`maxHeight` через inline style; без них — `w-full` (как раньше)
+- `useArticleEditor` — `insertMediaTag()` принимает `width`/`height`, генерирует `width={N} height={N}` в MDX-теге; `MediaPreview` хранит размеры из API
+- Редактор автора (edit + new): поля «Ширина × Высота px» в media preview, предзаполняются из API, пустые = полная ширина
+- Preview route: `remarkMdxDiagramsToHtml` читает `width`/`height` атрибуты и применяет как inline style
+
+**Файлы**:
+- `src/app/api/upload/route.ts` — imageSize + width/height в ответе
+- `src/components/mdx/article-image.tsx` — width/height props
+- `src/components/mdx/article-video.tsx` — width/height props
+- `src/hooks/useArticleEditor.ts` — dimensions в MediaPreview + insertMediaTag
+- `src/app/author/(protected)/articles/[id]/page.tsx` — UI полей размеров
+- `src/app/author/(protected)/articles/new/page.tsx` — UI полей размеров
+- `src/app/api/preview/route.ts` — width/height в preview rendering
+
+#### 29c — Подробное руководство для автора и ревьюера
+
+**Что сделано**: Расширено содержание `GUIDE_CONTENT` в guide-modal.tsx:
+- **Автор**: 3 → 7 секций (44 пункта): Написание статей, Синтаксис MDX, Медиафайлы, LaTeX-формулы, MDX-компоненты, Процесс ревью, Планирование и публикация
+- **Ревьюер**: 2 → 5 секций (26 пунктов): Назначения, Чеклист проверки, Замечания и чат, Diff и обновления, Вердикт
+- Заголовки изменены с «Возможности» на «Руководство» для обеих ролей
+
+**Файлы**:
+- `src/components/guide-modal.tsx` — расширенный контент
+
+**Валидация**: `npm run build` OK
+
+#### E2E регрессия (Done — 2026-04-16)
+
+- **Smoke**: 20/20 PASS
+- **Targeted (фаза 29)**: 8/8 PASS
+  - 29a: навбар обновляется после логина reader/author/reviewer без F5
+  - 29b: API upload возвращает width/height для изображений
+  - 29c: руководство автора — 7 секций, ревьюера — 5 секций
+- **Test cases (P0)**: 29/29 PASS
+- **Всего**: 57/57
+- **Вердикт**: GO

@@ -3,11 +3,12 @@ import { db } from "@/lib/db";
 import {
   reviewComments,
   reviewAssignments,
+  reviewSessions,
   articles,
   notifications,
 } from "@/lib/db/schema";
 import { getSession } from "@/lib/auth";
-import { eq } from "drizzle-orm";
+import { eq, and, or } from "drizzle-orm";
 import { ulid } from "ulid";
 
 export const dynamic = "force-dynamic";
@@ -57,46 +58,86 @@ export async function PUT(
     );
   }
 
-  // Fetch assignment
-  const assignment = await db
-    .select()
-    .from(reviewAssignments)
-    .where(eq(reviewAssignments.id, comment.assignmentId))
-    .get();
+  // Resolve context via session or assignment
+  let articleId: string | null = null;
+  let isReviewer = false;
+  let sessionStatus: string | null = null;
 
-  if (!assignment) {
-    return NextResponse.json(
-      { error: "Назначение не найдено" },
-      { status: 404 },
-    );
+  if (comment.sessionId) {
+    // Новая схема: комментарий привязан к сессии
+    const reviewSession = await db
+      .select()
+      .from(reviewSessions)
+      .where(eq(reviewSessions.id, comment.sessionId))
+      .get();
+
+    if (!reviewSession) {
+      return NextResponse.json({ error: "Сессия не найдена" }, { status: 404 });
+    }
+
+    sessionStatus = reviewSession.status;
+    articleId = reviewSession.articleId;
+
+    // Проверить: является ли ревьюером в сессии
+    if (session.userId) {
+      const assignment = await db
+        .select({ id: reviewAssignments.id })
+        .from(reviewAssignments)
+        .where(
+          and(
+            eq(reviewAssignments.sessionId, comment.sessionId),
+            eq(reviewAssignments.reviewerId, session.userId),
+          ),
+        )
+        .get();
+      isReviewer = !!assignment;
+    }
+  } else if (comment.assignmentId) {
+    // Старая схема: комментарий привязан к назначению
+    const assignment = await db
+      .select()
+      .from(reviewAssignments)
+      .where(eq(reviewAssignments.id, comment.assignmentId))
+      .get();
+
+    if (!assignment) {
+      return NextResponse.json({ error: "Назначение не найдено" }, { status: 404 });
+    }
+
+    sessionStatus = assignment.status === "pending" || assignment.status === "accepted"
+      ? "open"
+      : "closed";
+    articleId = assignment.articleId;
+    isReviewer = session.userId === assignment.reviewerId;
+  } else {
+    return NextResponse.json({ error: "Комментарий без контекста" }, { status: 400 });
   }
 
-  // Assignment must be active
-  if (assignment.status !== "pending" && assignment.status !== "accepted") {
+  // Чат закрыт, если сессия/назначение завершены
+  if (sessionStatus !== "open") {
     return NextResponse.json(
-      { error: "Ревью уже завершено или отклонено" },
+      { error: "Ревью уже завершено" },
       { status: 403 },
     );
   }
 
-  // Fetch article for ownership check
-  const article = await db
-    .select({ id: articles.id, authorId: articles.authorId })
-    .from(articles)
-    .where(eq(articles.id, assignment.articleId))
-    .get();
-
-  if (!article) {
+  if (!articleId) {
     return NextResponse.json({ error: "Статья не найдена" }, { status: 404 });
   }
 
+  // Fetch article for authorId
+  const article = await db
+    .select({ id: articles.id, authorId: articles.authorId })
+    .from(articles)
+    .where(eq(articles.id, articleId))
+    .get();
+
   const isAdmin = session.isAdmin;
-  const isAuthor = session.userId === article.authorId;
-  const isReviewer = session.userId === assignment.reviewerId;
+  const isAuthor = !!article?.authorId && session.userId === article.authorId;
 
   // Access rules:
   // resolved=true → admin or article author
-  // resolved=false (reopen) → admin or reviewer
+  // resolved=false (reopen) → admin or reviewer в сессии
   if (resolved && !isAdmin && !isAuthor) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -105,8 +146,6 @@ export async function PUT(
   }
 
   const now = Math.floor(Date.now() / 1000);
-  // Admin has no users record → store null (consistent with authorId=null on admin comments).
-  // User ID is stored for non-admin resolvers so the field is informational only.
   const resolvedBy = resolved ? (session.userId ?? null) : null;
 
   await db
@@ -119,7 +158,7 @@ export async function PUT(
     .where(eq(reviewComments.id, id));
 
   // When reviewer reopens → notify article author (or admin if article has no author)
-  if (!resolved && isReviewer) {
+  if (!resolved && isReviewer && article) {
     await db.insert(notifications).values({
       id: ulid(),
       recipientId: article.authorId ?? null,
@@ -127,7 +166,7 @@ export async function PUT(
       type: "review_comment_reopened",
       payload: JSON.stringify({
         articleId: article.id,
-        assignmentId: assignment.id,
+        sessionId: comment.sessionId,
         commentId: id,
       }),
       isRead: 0,

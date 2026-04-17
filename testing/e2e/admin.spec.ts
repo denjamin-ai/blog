@@ -5,6 +5,8 @@
  * US-AD4: Создание статьи (MDX)
  * US-AD5: Редактирование + сохранение
  * US-AD6: Публикация / снятие с публикации
+ * TC-AD-030: Создание review session с 2 ревьюерами
+ * TC-AD-031: Руководство (guide modal)
  */
 
 import { test, expect } from "@playwright/test";
@@ -217,5 +219,129 @@ test.describe("US-AD6: Публикация и снятие статьи", () =>
     await expect(
       page.getByRole("button", { name: /опубликовать/i }),
     ).toBeVisible({ timeout: 8_000 });
+  });
+});
+
+// ── TC-AD-030: Создание review session с 2 ревьюерами ───────────────────
+
+test.describe("TC-AD-030: Создание review session с 2 ревьюерами", () => {
+  test.use({ storageState: AUTH_FILE });
+
+  test("отправить статью на ревью 2 ревьюерам через ReviewerPickerModal", async ({
+    page,
+  }) => {
+    // Создаём черновик через API
+    const createResp = await page.request.post("/api/articles", {
+      data: {
+        title: "E2E session test",
+        slug: `e2e-session-${Date.now()}`,
+        content: "## Тестовая статья для ревью-сессии\n\nКонтент для проверки.",
+        tags: [],
+        status: "draft",
+      },
+      headers: { Origin: "http://localhost:3001" },
+    });
+    expect(createResp.status()).toBe(201);
+    const { id: articleId } = await createResp.json();
+
+    // Открываем страницу редактирования
+    await page.goto(`/admin/articles/${articleId}`);
+
+    // Кликаем «На ревью»
+    const reviewBtn = page.getByRole("button", { name: /на ревью/i });
+    await expect(reviewBtn).toBeVisible({ timeout: 5_000 });
+    await reviewBtn.click();
+
+    // Ожидаем открытие модала
+    const dialog = page.locator('dialog[aria-label="Выбрать ревьюеров"]');
+    await expect(dialog).toBeVisible({ timeout: 3_000 });
+
+    // Вводим поиск «ревьюер» — совпадёт с «Тестовый ревьюер» и «Второй ревьюер»
+    const searchInput = dialog.locator(
+      'input[placeholder*="Имя или никнейм"]',
+    );
+    await searchInput.fill("ревьюер");
+
+    // Ждём результаты поиска
+    await page.waitForResponse(
+      (res) => res.url().includes("/api/reviewers?search=") && res.ok(),
+      { timeout: 5_000 },
+    );
+
+    // Кликаем по обоим ревьюерам
+    const firstReviewer = dialog.locator("button", {
+      hasText: "Тестовый ревьюер",
+    });
+    const secondReviewer = dialog.locator("button", {
+      hasText: "Второй ревьюер",
+    });
+
+    await expect(firstReviewer).toBeVisible({ timeout: 3_000 });
+    await firstReviewer.click();
+
+    await expect(secondReviewer).toBeVisible({ timeout: 3_000 });
+    await secondReviewer.click();
+
+    // Проверяем счётчик
+    await expect(dialog.getByText(/Выбрано: 2 из \d+/)).toBeVisible();
+
+    // Подтверждаем
+    const [putResponse] = await Promise.all([
+      page.waitForResponse(
+        (res) =>
+          res.url().includes("/api/articles/") &&
+          res.request().method() === "PUT",
+        { timeout: 10_000 },
+      ),
+      dialog.getByRole("button", { name: /подтвердить/i }).click(),
+    ]);
+    expect(putResponse.status()).toBe(200);
+
+    // Проверяем, что секция назначений появилась
+    await expect(
+      page.getByText(/назначения на ревью/i),
+    ).toBeVisible({ timeout: 5_000 });
+
+    // Проверяем через API, что сессия создана с 2 назначениями
+    const sessionsResp = await page.request.get(
+      `/api/articles/${articleId}/review-sessions`,
+      { headers: { Origin: "http://localhost:3001" } },
+    );
+    expect(sessionsResp.status()).toBe(200);
+    const sessions = await sessionsResp.json();
+    const sessionArr = Array.isArray(sessions) ? sessions : sessions.sessions ?? [];
+    expect(sessionArr.length).toBeGreaterThanOrEqual(1);
+
+    const latestSession = sessionArr[sessionArr.length - 1];
+    const assignmentCount =
+      latestSession.assignments?.length ?? latestSession.assignmentIds?.length ?? 0;
+    expect(assignmentCount).toBe(2);
+  });
+});
+
+// ── TC-AD-031: Guide modal ──────────────────────────────────────────────
+
+test.describe("TC-AD-031: Руководство админа", () => {
+  test.use({ storageState: AUTH_FILE });
+
+  test("открыть и закрыть guide modal", async ({ page }) => {
+    await page.goto("/admin");
+
+    // Клик по кнопке руководства
+    const guideBtn = page.locator('button[aria-label="Открыть руководство"]').first();
+    await expect(guideBtn).toBeVisible({ timeout: 5_000 });
+    await guideBtn.click();
+
+    // Проверяем контент
+    const dialog = page.locator("dialog[open]");
+    await expect(dialog).toBeVisible({ timeout: 3_000 });
+    await expect(dialog.getByText("Возможности администратора")).toBeVisible();
+    await expect(
+      dialog.getByText("Создавайте и редактируйте статьи всех авторов"),
+    ).toBeVisible();
+
+    // Закрываем
+    await dialog.locator('button[aria-label="Закрыть"]').click();
+    await expect(dialog).not.toBeVisible({ timeout: 3_000 });
   });
 });

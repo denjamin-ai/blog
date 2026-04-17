@@ -5,9 +5,10 @@ import {
   reviewComments,
   notifications,
   articles,
+  users,
 } from "@/lib/db/schema";
 import { getSession } from "@/lib/auth";
-import { eq, desc } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { ulid } from "ulid";
 
 export const dynamic = "force-dynamic";
@@ -63,11 +64,40 @@ export async function GET(
   const access = await resolveAccess(id);
   if (access.error) return access.error;
 
+  const { assignment } = access;
+
+  // Делегируем к session chat, если sessionId доступен
+  if (assignment!.sessionId) {
+    const comments = await db
+      .select({
+        id: reviewComments.id,
+        sessionId: reviewComments.sessionId,
+        assignmentId: reviewComments.assignmentId,
+        authorId: reviewComments.authorId,
+        authorName: users.name,
+        isAdminComment: reviewComments.isAdminComment,
+        content: reviewComments.content,
+        quotedText: reviewComments.quotedText,
+        quotedAnchor: reviewComments.quotedAnchor,
+        parentId: reviewComments.parentId,
+        createdAt: reviewComments.createdAt,
+        updatedAt: reviewComments.updatedAt,
+        resolvedAt: reviewComments.resolvedAt,
+        resolvedBy: reviewComments.resolvedBy,
+      })
+      .from(reviewComments)
+      .leftJoin(users, eq(reviewComments.authorId, users.id))
+      .where(eq(reviewComments.sessionId, assignment!.sessionId))
+      .orderBy(reviewComments.createdAt);
+    return NextResponse.json(comments);
+  }
+
+  // Fallback: старые комментарии без sessionId
   const comments = await db
     .select()
     .from(reviewComments)
     .where(eq(reviewComments.assignmentId, id))
-    .orderBy(desc(reviewComments.createdAt));
+    .orderBy(reviewComments.createdAt);
 
   return NextResponse.json(comments);
 }
@@ -118,51 +148,31 @@ export async function POST(
       { status: 400 },
     );
   }
-  if (quotedText !== undefined && typeof quotedText !== "string") {
-    return NextResponse.json(
-      { error: "Недопустимый quotedText" },
-      { status: 400 },
-    );
-  }
   if (typeof quotedText === "string" && quotedText.length > 2000) {
-    return NextResponse.json(
-      { error: "Цитата слишком длинная" },
-      { status: 400 },
-    );
-  }
-  if (quotedAnchor !== undefined && typeof quotedAnchor !== "string") {
-    return NextResponse.json(
-      { error: "Недопустимый quotedAnchor" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Цитата слишком длинная" }, { status: 400 });
   }
   if (typeof quotedAnchor === "string" && quotedAnchor.length > 200) {
-    return NextResponse.json(
-      { error: "Недопустимый quotedAnchor" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Недопустимый quotedAnchor" }, { status: 400 });
   }
 
-  // Validate parentId belongs to the same assignment
-  if (parentId !== undefined) {
+  // Validate parentId belongs to same session/assignment
+  if (parentId !== undefined && parentId !== null) {
     if (typeof parentId !== "string") {
-      return NextResponse.json(
-        { error: "Недопустимый parentId" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Недопустимый parentId" }, { status: 400 });
     }
     const parent = await db
-      .select({
-        id: reviewComments.id,
-        assignmentId: reviewComments.assignmentId,
-      })
+      .select({ sessionId: reviewComments.sessionId, assignmentId: reviewComments.assignmentId })
       .from(reviewComments)
       .where(eq(reviewComments.id, parentId))
       .get();
 
-    if (!parent || parent.assignmentId !== id) {
+    const sameContext = assignment!.sessionId
+      ? parent?.sessionId === assignment!.sessionId
+      : parent?.assignmentId === id;
+
+    if (!parent || !sameContext) {
       return NextResponse.json(
-        { error: "Родительский комментарий не найден в этом назначении" },
+        { error: "Родительский комментарий не найден" },
         { status: 400 },
       );
     }
@@ -173,8 +183,10 @@ export async function POST(
   const isAdminComment = session!.isAdmin ? 1 : 0;
   const authorId = session!.isAdmin ? null : (session!.userId ?? null);
 
+  // Сохраняем с sessionId (если есть) + assignmentId для трассируемости
   await db.insert(reviewComments).values({
     id: commentId,
+    sessionId: assignment!.sessionId ?? null,
     assignmentId: id,
     authorId,
     isAdminComment,
@@ -199,7 +211,6 @@ export async function POST(
 
     if (parent) {
       if (parent.isAdminComment && !session!.isAdmin) {
-        // Reviewer replied to admin → notify admin
         await db.insert(notifications).values({
           id: ulid(),
           recipientId: null,
@@ -213,12 +224,7 @@ export async function POST(
           isRead: 0,
           createdAt: now,
         });
-      } else if (
-        !parent.isAdminComment &&
-        parent.authorId &&
-        session!.isAdmin
-      ) {
-        // Admin replied to reviewer → notify reviewer
+      } else if (!parent.isAdminComment && parent.authorId && session!.isAdmin) {
         await db.insert(notifications).values({
           id: ulid(),
           recipientId: parent.authorId,
