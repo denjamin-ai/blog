@@ -10,6 +10,7 @@ import rehypePrettyCode from "rehype-pretty-code";
 import rehypeStringify from "rehype-stringify";
 import { visit } from "unist-util-visit";
 import { getSession } from "@/lib/auth";
+import { rehypeAnchorIds } from "@/lib/rehype-anchor-ids";
 
 // Converts <Mermaid chart={...}>, <Diagram type="..." chart={...}>, <Circuit code={...}>
 // MDX JSX nodes into plain HTML nodes before remarkRehype runs.
@@ -44,6 +45,7 @@ function remarkMdxDiagramsToHtml() {
           const val = attr.value;
           if (typeof val === "string") return val;
           if (val?.type === "mdxJsxAttributeValueExpression") {
+            if (typeof val.value !== "string") return "";
             const raw: string = val.value.trim();
             // Template literal: `...`
             if (raw.startsWith("`") && raw.endsWith("`"))
@@ -139,6 +141,7 @@ const processor = unified()
     theme: { dark: "github-dark", light: "github-light" },
     keepBackground: false,
   })
+  .use(rehypeAnchorIds)
   .use(rehypeStringify, { allowDangerousHtml: true });
 
 export async function POST(request: Request) {

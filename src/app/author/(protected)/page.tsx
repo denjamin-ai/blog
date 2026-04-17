@@ -4,8 +4,9 @@ import {
   articles,
   articleVotes,
   bookmarks as bookmarksTable,
+  reviewAssignments,
 } from "@/lib/db/schema";
-import { eq, and, sql, sum, count } from "drizzle-orm";
+import { eq, and, or, sql, sum, count, inArray } from "drizzle-orm";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -50,28 +51,35 @@ export default async function AuthorDashboard() {
 
   let totalBookmarks = 0;
   let avgRating = 0;
+  let articlesInReview = 0;
+
+  if (articleIds.length > 0) {
+    const reviewRows = await db
+      .selectDistinct({ articleId: reviewAssignments.articleId })
+      .from(reviewAssignments)
+      .where(
+        and(
+          inArray(reviewAssignments.articleId, articleIds),
+          or(
+            eq(reviewAssignments.status, "pending"),
+            eq(reviewAssignments.status, "accepted"),
+          ),
+        ),
+      );
+    articlesInReview = reviewRows.length;
+  }
 
   if (articleIds.length > 0) {
     const [bookmarkRow, ratingRow] = await Promise.all([
       db
         .select({ total: count() })
         .from(bookmarksTable)
-        .where(
-          sql`${bookmarksTable.articleId} IN (${sql.join(
-            articleIds.map((id) => sql`${id}`),
-            sql`, `,
-          )})`,
-        )
+        .where(inArray(bookmarksTable.articleId, articleIds))
         .get(),
       db
         .select({ total: sum(articleVotes.value) })
         .from(articleVotes)
-        .where(
-          sql`${articleVotes.articleId} IN (${sql.join(
-            articleIds.map((id) => sql`${id}`),
-            sql`, `,
-          )})`,
-        )
+        .where(inArray(articleVotes.articleId, articleIds))
         .get(),
     ]);
 
@@ -128,6 +136,33 @@ export default async function AuthorDashboard() {
           </div>
         ))}
       </div>
+
+      {articlesInReview > 0 && (
+        <Link
+          href="/author/articles?filter=review"
+          className="block mb-8 rounded-xl border border-warning/30 bg-warning-bg/30 p-5 hover:border-warning/60 hover:bg-warning-bg/50 transition-colors"
+        >
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <div className="text-sm font-medium text-warning mb-1">
+                На ревью
+              </div>
+              <div className="text-2xl font-display font-bold text-foreground">
+                {articlesInReview}{" "}
+                {articlesInReview === 1
+                  ? "статья"
+                  : articlesInReview < 5
+                    ? "статьи"
+                    : "статей"}
+              </div>
+              <div className="text-sm text-muted-foreground mt-1">
+                Ждут вашего внимания — откройте, чтобы увидеть замечания
+              </div>
+            </div>
+            <div className="text-accent text-2xl">→</div>
+          </div>
+        </Link>
+      )}
     </div>
   );
 }

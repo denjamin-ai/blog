@@ -1,8 +1,8 @@
 import { createHash } from "crypto";
 
 interface DiagramProps {
-  type: string;
-  chart: string;
+  type?: string;
+  chart?: string;
 }
 
 const SUPPORTED_TYPES = new Set([
@@ -34,8 +34,8 @@ function Fallback({ chart }: { chart: string }) {
   );
 }
 
-export async function Diagram({ type, chart }: DiagramProps) {
-  if (!SUPPORTED_TYPES.has(type)) {
+export async function Diagram({ type = "", chart = "" }: DiagramProps) {
+  if (!chart || !SUPPORTED_TYPES.has(type)) {
     return <Fallback chart={chart} />;
   }
 
@@ -51,8 +51,11 @@ export async function Diagram({ type, chart }: DiagramProps) {
         cache: "no-store",
       });
       if (res.ok) {
-        svg = sanitizeSvg(await res.text());
-        svgCache.set(key, svg);
+        const body = await res.text();
+        if (typeof body === "string" && body.length > 0) {
+          svg = sanitizeSvg(body);
+          svgCache.set(key, svg);
+        }
       }
     } catch {
       // fall through to fallback

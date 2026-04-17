@@ -4,7 +4,7 @@ import { useEffect, useId, useRef } from "react";
 import { useTheme } from "next-themes";
 
 interface MermaidProps {
-  chart: string;
+  chart?: string;
 }
 
 export function Mermaid({ chart }: MermaidProps) {
@@ -16,6 +16,10 @@ export function Mermaid({ chart }: MermaidProps) {
 
   useEffect(() => {
     if (!containerRef.current) return;
+    if (typeof chart !== "string" || chart.length === 0) {
+      containerRef.current.innerHTML = "";
+      return;
+    }
     let cancelled = false;
 
     import("mermaid")

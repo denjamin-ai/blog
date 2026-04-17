@@ -18,7 +18,7 @@ export function DiffPreviewModal({
   return (
     <dialog
       open
-      className="fixed inset-0 w-full h-full p-0 m-0 max-w-none max-h-none border-0 z-50 bg-black/50"
+      className="fixed inset-0 w-full h-full p-0 m-0 max-w-none max-h-none border-0 z-50 bg-foreground/50"
     >
       <div
         className="relative w-full h-full flex flex-col bg-background max-w-4xl mx-auto my-8 rounded-xl border border-border shadow-xl overflow-hidden"

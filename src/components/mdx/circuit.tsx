@@ -1,9 +1,9 @@
 import { Diagram } from "./diagram";
 
 interface CircuitProps {
-  code: string;
+  code?: string;
 }
 
-export function Circuit({ code }: CircuitProps) {
+export function Circuit({ code = "" }: CircuitProps) {
   return <Diagram type="tikz" chart={code} />;
 }

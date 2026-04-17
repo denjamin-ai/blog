@@ -43,9 +43,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | `profile` | Single record `id="main"`, `links` as JSON object string. Extra fields: `checklistTemplate` (JSON array), `defaultOgImage` |
 | `profileVersions` | Same snapshot-before-update pattern as articles |
 | `users` | Created by admin (no self-registration). `role: reviewer\|reader\|author`. `isBlocked` hides all author's articles; `commentingBlocked` blocks reader comments. Author public profile: `displayName`, `bio`, `avatarUrl`, `links` (JSON), `slug` |
-| `reviewAssignments` | Links reviewer → specific article version snapshot. Status: `pending→accepted\|declined→completed`. Fields: `verdict (approved\|needs_work\|rejected)`, `verdictNote` |
+| `reviewSessions` | Groups one or more `reviewAssignments` for a single article version. Status: `open\|completed\|cancelled`. Enables multi-reviewer workflows + session-wide shared chat via `reviewComments.sessionId` |
+| `reviewAssignments` | Links reviewer → specific article version snapshot. `sessionId` FK → `reviewSessions` (nullable for pre-migration rows). Status: `pending→accepted\|declined→completed`. Fields: `verdict (approved\|needs_work\|rejected)`, `verdictNote` |
 | `reviewChecklists` | Copy of checklist template created per assignment. `items` JSON `[{text, checked}]`. One per assignment. |
-| `reviewComments` | Private review thread. `isAdminComment=1` when admin writes (authorId=NULL then). Fields: `resolvedAt` (null=open), `resolvedBy` (FK→users, set null on delete) |
+| `reviewComments` | Private review thread. `isAdminComment=1` when admin writes (authorId=NULL then). `sessionId` FK → `reviewSessions` powers session-wide shared chat (nullable for pre-migration rows). Fields: `resolvedAt` (null=open), `resolvedBy` (FK→users, set null on delete), inline-review fields (see Inline Review) |
 | `publicComments` | Public reader comments. `deletedAt` for soft delete; `articleVersionId` for stale detection |
 | `articleChangelog` | Manual public changelog entries, curated by admin. Immutable — edit = delete + recreate |
 | `notifications` | Polling-based. `isAdminRecipient=1` + `recipientId=NULL` targets admin |
@@ -125,6 +126,53 @@ interface SessionData {
 - **Diff**: `GET /api/reviewer/assignments/[id]/diff` — diff between assigned version snapshot and current article content. Same endpoint exists for admin (`/api/admin/assignments/[id]/diff`) and for the article author (`/api/author/assignments/[id]/diff`).
 - **Review comments API**: `GET/POST /api/assignments/[id]/review-comments` — thread visible to admin + assigned reviewer only. `POST /api/review-comments/[id]/resolve` — toggle resolved state; blocked when assignment `status=completed`.
 
+**Review sessions** (`reviewSessions` table, `src/lib/session-helpers.ts`):
+- A session groups multiple `reviewAssignments` against one article version snapshot — one reviewer per assignment, multiple reviewers per session.
+- `POST /api/review-sessions` — create session + child assignments in one call (admin or article author). `validateReviewerCount()` enforces per-difficulty reviewer counts.
+- `GET /api/review-sessions/[id]` — session detail with all assignments.
+- `GET/POST /api/sessions/[id]/review-comments` — **session-wide** shared chat (distinct from per-assignment threads). Access gated by `resolveSessionAccess()` — admin, article author, or any reviewer assigned to the session.
+- `reviewComments.sessionId` non-null → shared chat; `.assignmentId` non-null → per-assignment thread.
+
+### Inline Review (`src/components/review/`, `src/lib/anchoring.ts`)
+Inline annotation system for code/text review with text selection, block comments, suggestions, and batch review workflow.
+
+**Anchoring** (`src/lib/anchoring.ts`):
+- `createAnchor(range, container)` → `AnchorData` with TextQuoteSelector + TextPositionSelector
+- `resolveAnchor(anchorData, container)` → `Range | null` — cascading match (exact → fuzzy via diff-match-patch, threshold 0.4)
+- `isOrphan(anchorData, container)` — true if anchor can no longer be resolved (content changed)
+- `rehypeAnchorIds` (`src/lib/rehype-anchor-ids.ts`) — rehype plugin adding deterministic `data-anchor-id` to elements (SHA256 hash)
+
+**Review comments** (`reviewComments` table fields):
+- `anchorType`: `"text" | "block" | "general"` — text selection, block-level, or general comment
+- `anchorData`: JSON string with `{ selectors: [...] }` — TextQuoteSelector + TextPositionSelector
+- `commentType`: `"comment" | "suggestion"` — suggestions include `suggestionText` for apply
+- `batchId`: non-null = pending (draft); null = published. Batch visibility: pending comments visible only to admin + comment author
+
+**Batch review flow**:
+- Reviewer creates comments with `batchId` → comments stay pending (invisible to author)
+- `POST /api/assignments/[id]/submit-review` — publishes all pending comments (sets `batchId=null`), sets verdict, completes assignment atomically
+- `BatchReviewBar` + `BatchReviewModal` components handle the UI
+
+**Suggestion apply**: `PUT /api/review-comments/[id]/apply-suggestion` — admin/author only; `stripDangerousHtml()` sanitizes `suggestionText`; atomic transaction with `appliedAt` guard prevents double-apply; creates version snapshot before modifying article content
+
+**Key components** (`src/components/review/`):
+- `review-context.tsx` — React context for review state (comments, active thread, highlights)
+- `inline-review-layout.tsx` — two-panel layout (article + sidebar), resizable
+- `selection-popover.tsx` — popover on text selection with Comment/Suggestion buttons
+- `highlight-layer.tsx` — CSS Highlight API for annotation rendering
+- `review-sidebar.tsx` — sidebar listing all review threads
+- `review-thread.tsx` — individual comment thread with replies
+- `batch-review-bar.tsx` / `batch-review-modal.tsx` — batch submit UI
+- `diff-overlay.tsx` — inline diff visualization overlay
+- `review-keyboard-handler.tsx` + `use-review-keyboard.ts` — keyboard shortcuts (N/P/R/E/C/⌘↵)
+- `margin-pins.tsx` — numbered comment pins in the right margin (desktop only). Resolves anchors via `resolveAnchor()`, stacks overlapping pins with 28px min gap, mutes resolved, colors per-reviewer via stable HSL hash. Click activates the thread.
+- `session-review-thread.tsx` — shared session chat UI (reads `/api/sessions/[id]/review-comments`)
+
+**Review pages per role**:
+- Reviewer: `/reviewer/assignments/[id]` — full inline review interface
+- Admin: `/admin/articles/[id]/review/[assignmentId]` — admin review view
+- Author: `/author/articles/[id]/review/[assignmentId]` — read-only view. Can **apply suggestions** and **mark comments resolved**; cannot create new comments, replies, or suggestions. `author-review-view.tsx` + `unified-review-view.tsx` render this mode.
+
 ### Author portal (`src/app/author/(protected)/`)
 Layout calls `requireAuthor()`. Authors manage only their own articles (`article.authorId === session.userId` enforced on all `/api/author/*` routes).
 
@@ -134,6 +182,7 @@ Layout calls `requireAuthor()`. Authors manage only their own articles (`article
 - `GET/PUT /api/author/profile` — manage public profile (`displayName`, `bio`, `avatarUrl`, `links`, `slug`); slug uniqueness checked at API level
 - `GET /api/author/assignments` — list review assignments for author's own articles
 - `GET /api/author/assignments/[id]/diff` — diff between assigned version snapshot and current content
+- `GET /api/author/articles/[id]/review-comments` — list published review comments across all assignments on the author's own article (pending comments with non-null `batchId` are filtered out)
 
 ### Reviewer portal (`src/app/reviewer/(protected)/`)
 Layout calls `requireUser("reviewer")`. All `/api/reviewer/*` routes enforce `session.userId === assignment.reviewerId`.
@@ -142,7 +191,7 @@ Layout calls `requireUser("reviewer")`. All `/api/reviewer/*` routes enforce `se
 
 **API endpoints:**
 - `GET /api/reviewer/assignments` — list assignments for current reviewer
-- `PUT /api/reviewer/assignments/[id]` — update status (`accepted | declined | completed`); `completed` requires `verdict`
+- `PATCH /api/reviewer/assignments/[id]` — update status (`accepted | declined | completed`); `completed` requires `verdict`
 - `GET/PUT /api/reviewer/assignments/[id]/checklist` — get/update `[{text, checked}]` items
 - `GET /api/reviewer/assignments/[id]/diff` — diff against current article content
 - `GET /api/reviewer/assignments/[id]/versions` — article version snapshots
@@ -157,7 +206,7 @@ Layout calls `requireUser("reviewer")`. All `/api/reviewer/*` routes enforce `se
 - `GET /api/cron/publish` — protected by `Authorization: Bearer <CRON_SECRET>` header
 - Finds `status=scheduled` articles with `scheduledAt <= now()`; skips blocked authors
 - Sets `status=published`, clears `scheduledAt`; batch-notifies subscribers on first publish
-- Configure in Vercel as a Cron Job (every minute): `{"path":"/api/cron/publish","schedule":"* * * * *"}`
+- Configured in `vercel.json` as a Cron Job (every minute): `{"path":"/api/cron/publish","schedule":"* * * * *"}`
 
 ### Engagement (votes, bookmarks, subscriptions)
 - All toggle endpoints use `db.transaction()` for race-safe check-and-insert/delete
@@ -203,13 +252,14 @@ Layout calls `requireUser("reviewer")`. All `/api/reviewer/*` routes enforce `se
 - `utils.ts` — `parseTags(json)`, `mdxToPlainText(src, maxLen?)` (strips code/links/HTML+JSX tags for excerpts — use for SEO description), `parseLinks(json)`
 
 ### MDX (`src/lib/mdx.ts`)
-- `compileMDX(source)` — compiles MDX string with custom component map
-- **Registered MDX components**: `Expandable`, `Mermaid`, `Diagram`, `Circuit`, `ArticleImage`, `ArticleVideo` — all registered in `mdxComponents`
+- `compileMDX(source, { reviewMode? })` — compiles MDX string with custom component map. `reviewMode: true` swaps `Mermaid/Diagram/Circuit` for `ReviewMermaid/ReviewDiagram/ReviewCircuit` (`src/components/mdx/diagram-with-source.tsx`), which render the diagram alongside a collapsible `<details>` showing its source — used on review pages.
+- `stripDangerousHtml(source)` — exported from `mdx.ts`; strips `<script>`/`<iframe>`/`<object>`/`<embed>`/`<link>`, `on*=` handlers, and `javascript:` URIs. Also used by the suggestion-apply endpoint before persisting suggestion text.
+- **Registered MDX components**: `Expandable`, `Mermaid`, `Diagram`, `Circuit`, `ArticleImage`, `ArticleVideo` — all registered in `mdxComponents` (or review-variants in `mdxReviewComponents`)
 - `CodeCopyButtons` (`src/components/mdx/copy-button.tsx`) is a standalone client component rendered directly in article pages; attaches copy buttons to `[data-rehype-pretty-code-figure]` elements via DOM `useEffect`
 - **LaTeX math**: `remark-math` + `rehype-katex` in the MDX pipeline — use `$inline$` and `$$block$$` syntax
 - **Mermaid diagrams**: client-side rendering via lazy-loaded `Mermaid` component, theme-aware (`dark`/`default`)
 - **Kroki diagrams** (`Diagram`, `Circuit`): server-rendered via the cloud Kroki service — supports PlantUML, BPMN, WaveDrom, Graphviz, D2, TikZ
-- **Video**: `fluent-ffmpeg` + `ffprobe` installed for server-side video processing
+- **Video**: `fluent-ffmpeg` + `ffprobe` installed for server-side video processing (listed in `next.config.ts` `serverExternalPackages`)
 - **Heading anchors**: `rehype-slug` adds `id` attributes to headings for deep links
 
 ### API pattern (`src/app/api/`)
@@ -228,6 +278,7 @@ Custom Claude Code skill definitions — not application code.
 - `skills/impeccable/` — design reference (color, typography, spatial, interaction)
 
 ## Conventions
+- **Path alias**: `@/*` maps to `src/*` (tsconfig) — use `import { ... } from "@/..."` everywhere
 - All DB queries go through Drizzle — no raw SQL
 - API routes in `src/app/api/`, admin pages in `src/app/admin/(protected)/`
 - Custom MDX components in `src/components/mdx/`, registered in `src/lib/mdx.ts`
@@ -235,8 +286,18 @@ Custom Claude Code skill definitions — not application code.
 - UI text is in Russian
 - `parseTags()` utility in `src/lib/utils.ts` — use for reading `article.tags` JSON
 - **Shared TypeScript types**: `src/types/index.ts` — `UserRole`, `SessionData`, `ArticleStatus`, `DifficultyLevel`, `ReviewAssignmentStatus`, `ReviewVerdict`, `ChecklistItem`, `NotificationType`, `ApiError`; import from here instead of redefining locally
-- **E2E tests**: `testing/e2e/{guest,reader,author,admin,reviewer}.spec.ts` (config: `playwright.config.ts`). Auth state files at `testing/e2e/.auth/{admin,author,reader,reviewer}.json` — generated by `global-setup.ts` on first run. Test utilities and DB reset scripts in `.agents/playwright-tester/`.
+- **E2E tests**: `testing/e2e/{guest,reader,author,admin,reviewer}.spec.ts` — see Testing section below
 - `npm run build` is the primary correctness check
+
+## Testing
+- Test server runs on **port 3001** (`.env.test`), using separate DB `blog.test.db`
+- `.env.test` has plaintext `ADMIN_PASSWORD_PLAIN` for auth setup — never commit real credentials there
+- Tests run **sequentially** (`workers: 1, fullyParallel: false`) — single shared test DB
+- `npm run dev:test` starts test stand (seeds DB + dev server on 3001); `npm run test:reset` resets DB between runs
+- `npm run test:e2e` auto-starts `dev:test` if not already running (`reuseExistingServer: true`)
+- `global-setup.ts` (`testing/e2e/global-setup.ts`) auto-generates auth state files at `testing/e2e/.auth/{admin,author,reader,reviewer}.json`
+- Test utilities and DB reset scripts in `.agents/playwright-tester/`
+- Config: `playwright.config.ts` — reports to `testing/reports/playwright-html`
 
 ## Design System
 

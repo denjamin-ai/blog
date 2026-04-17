@@ -41,6 +41,12 @@ export async function GET(
       content: reviewComments.content,
       quotedText: reviewComments.quotedText,
       quotedAnchor: reviewComments.quotedAnchor,
+      anchorType: reviewComments.anchorType,
+      anchorData: reviewComments.anchorData,
+      commentType: reviewComments.commentType,
+      suggestionText: reviewComments.suggestionText,
+      batchId: reviewComments.batchId,
+      appliedAt: reviewComments.appliedAt,
       parentId: reviewComments.parentId,
       createdAt: reviewComments.createdAt,
       updatedAt: reviewComments.updatedAt,
@@ -52,7 +58,15 @@ export async function GET(
     .where(eq(reviewComments.sessionId, sessionId))
     .orderBy(reviewComments.createdAt);
 
-  return NextResponse.json(comments);
+  // Pending batch comments visible only to admin and the comment author
+  const filtered = comments.filter((c) => {
+    if (c.batchId === null) return true;
+    if (access.role === "admin") return true;
+    if (access.role === "reviewer" && c.authorId === session.userId) return true;
+    return false;
+  });
+
+  return NextResponse.json(filtered);
 }
 
 export async function POST(
@@ -92,6 +106,11 @@ export async function POST(
     quotedText?: unknown;
     quotedAnchor?: unknown;
     parentId?: unknown;
+    anchorType?: unknown;
+    anchorData?: unknown;
+    commentType?: unknown;
+    suggestionText?: unknown;
+    batchId?: unknown;
   };
   try {
     body = await request.json();
@@ -99,7 +118,7 @@ export async function POST(
     return NextResponse.json({ error: "Неверный формат запроса" }, { status: 400 });
   }
 
-  const { content, quotedText, quotedAnchor, parentId } = body;
+  const { content, quotedText, quotedAnchor, parentId, anchorType, anchorData, commentType, suggestionText, batchId } = body;
 
   if (!content || typeof content !== "string" || content.trim().length === 0) {
     return NextResponse.json({ error: "Контент обязателен" }, { status: 400 });
@@ -115,6 +134,38 @@ export async function POST(
   }
   if (quotedAnchor !== undefined && typeof quotedAnchor === "string" && quotedAnchor.length > 200) {
     return NextResponse.json({ error: "quotedAnchor слишком длинный" }, { status: 400 });
+  }
+
+  // --- Inline review fields ---
+  const validAnchorTypes = ["text", "block", "general"];
+  if (anchorType !== undefined && (typeof anchorType !== "string" || !validAnchorTypes.includes(anchorType))) {
+    return NextResponse.json({ error: "Недопустимый anchorType" }, { status: 400 });
+  }
+  if (anchorData !== undefined && anchorData !== null) {
+    if (typeof anchorData !== "string" || anchorData.length > 5_000) {
+      return NextResponse.json({ error: "Недопустимый anchorData" }, { status: 400 });
+    }
+    try {
+      const parsed = JSON.parse(anchorData);
+      if (!Array.isArray(parsed.selectors)) throw new Error();
+    } catch {
+      return NextResponse.json({ error: "anchorData должен содержать selectors" }, { status: 400 });
+    }
+  }
+  const validCommentTypes = ["comment", "suggestion"];
+  if (commentType !== undefined && (typeof commentType !== "string" || !validCommentTypes.includes(commentType))) {
+    return NextResponse.json({ error: "Недопустимый commentType" }, { status: 400 });
+  }
+  if (commentType === "suggestion") {
+    if (!suggestionText || typeof suggestionText !== "string" || suggestionText.trim().length === 0) {
+      return NextResponse.json({ error: "suggestionText обязателен для предложений" }, { status: 400 });
+    }
+    if (suggestionText.length > 10_000) {
+      return NextResponse.json({ error: "suggestionText слишком длинный" }, { status: 400 });
+    }
+  }
+  if (batchId !== undefined && batchId !== null && typeof batchId !== "string") {
+    return NextResponse.json({ error: "Недопустимый batchId" }, { status: 400 });
   }
 
   // Валидация parentId: должен принадлежать той же сессии
@@ -144,6 +195,11 @@ export async function POST(
     content: content.trim(),
     quotedText: typeof quotedText === "string" ? quotedText : null,
     quotedAnchor: typeof quotedAnchor === "string" ? quotedAnchor : null,
+    anchorType: typeof anchorType === "string" ? anchorType as "text" | "block" | "general" : null,
+    anchorData: typeof anchorData === "string" ? anchorData : null,
+    commentType: typeof commentType === "string" ? commentType as "comment" | "suggestion" : null,
+    suggestionText: typeof suggestionText === "string" ? suggestionText.trim() : null,
+    batchId: typeof batchId === "string" ? batchId : null,
     parentId: typeof parentId === "string" ? parentId : null,
     createdAt: now,
     updatedAt: now,

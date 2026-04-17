@@ -202,6 +202,43 @@
 
 ---
 
+## Блок 13: Inline Review
+
+| # | TC | Описание | US |
+|---|----|---------|----|
+| 90 | TC-IR-001 | Выделение текста → комментарий | — |
+| 91 | TC-IR-002 | Suggestion → apply | — |
+| 92 | TC-IR-003 | Suggestion apply на изменённый текст → 422 | — |
+| 93 | TC-IR-007 | Batch review: 3 комментария → отправить → видны автору | — |
+| 94 | TC-IR-008 | Batch pending: автор НЕ видит pending (security) | — |
+| 95 | TC-IR-010 | Orphan → «Текст изменён» | — |
+| 96 | TC-IR-011 | Suggestion XSS → stripped (security) | — |
+| 97 | TC-IR-013 | Author resolve inline comment | — |
+| 98 | TC-IR-015 | Admin apply suggestion на чужую статью | — |
+
+---
+
+## Блок 14: UX ревью и мульти-ревьюер (Фаза 34)
+
+| # | TC | Описание | US |
+|---|----|---------|----|
+| 99 | TC-RV-DIAG-001 | Mermaid в ревью — нет JS-ошибок | US-RV-DIAG |
+| 100 | TC-RV-DIAG-002 | Kroki недоступен → Fallback | US-RV-DIAG |
+| 101 | TC-RV-DIAG-003 | Выделение в исходнике → annotation | US-RV-DIAG |
+| 102 | TC-RV-DIAG-004 | Circuit (TikZ) — рендер + toggle | US-RV-DIAG |
+| 103 | TC-AU-UX-001 | Секция «На ревью» на `/author/articles` | US-AU-UX |
+| 104 | TC-AU-UX-002 | Клик на карточку → unified review | US-AU-UX |
+| 105 | TC-AU-UX-003 | Unified видит комментарии всех ревьюеров | US-AU-UX |
+| 106 | TC-AU-UX-004 | Chips-фильтр по ревьюеру | US-AU-UX |
+| 107 | TC-AU-UX-005 | Apply suggestion: бейдж + toast + collapse | US-AU-UX |
+| 108 | TC-AU-UX-006 | «Открыть сессию» — deep-link сохранён | US-AU-UX |
+| 109 | TC-MULTI-001 | 2 ревьюера → unified показывает оба | US-AU-UX |
+| 110 | TC-MULTI-002 | Pending batch ревьюера A скрыт от B и автора | US-AU-UX |
+| 111 | TC-MULTI-003 | Apply suggestion A → B видит обновлённый MDX | US-AU-UX |
+| 112 | TC-MULTI-004 | Счётчик новых замечаний корректен | US-AU-UX |
+
+---
+
 ## Итоговая таблица выполнения регресса
 
 | Блок | Всего | Pass | Fail | Blocked | Pass% |
@@ -218,7 +255,9 @@
 | 10. Публичный контент | 4 | | | | |
 | 11. UI/UX | 6 | | | | |
 | 12. Мультиревьюер и руководство | 10 | | | | |
-| **ИТОГО** | **89** | | | | |
+| 13. Inline Review | 9 | | | | |
+| 14. UX ревью и мульти-ревьюер | 14 | | | | |
+| **ИТОГО** | **112** | | | | |
 
 **Тестировщик:** ________________  
 **Дата:** ________________  

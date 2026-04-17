@@ -3,12 +3,18 @@ import rehypeKatex from "rehype-katex";
 import rehypePrettyCode from "rehype-pretty-code";
 import rehypeSlug from "rehype-slug";
 import remarkMath from "remark-math";
+import { rehypeAnchorIds } from "@/lib/rehype-anchor-ids";
 import { Expandable } from "@/components/mdx/expandable";
 import { ArticleImage } from "@/components/mdx/article-image";
 import { ArticleVideo } from "@/components/mdx/article-video";
 import { Mermaid } from "@/components/mdx/mermaid";
 import { Diagram } from "@/components/mdx/diagram";
 import { Circuit } from "@/components/mdx/circuit";
+import {
+  ReviewMermaid,
+  ReviewDiagram,
+  ReviewCircuit,
+} from "@/components/mdx/diagram-with-source";
 
 const mdxComponents = {
   Expandable,
@@ -19,19 +25,35 @@ const mdxComponents = {
   Circuit,
 };
 
-// Удаляет потенциально опасные HTML-элементы из исходного MDX до компиляции.
-// Защита от XSS: <script>, <iframe>, <object>, <embed> выполняются браузером.
-function stripDangerousHtml(source: string): string {
+const mdxReviewComponents = {
+  Expandable,
+  ArticleImage,
+  ArticleVideo,
+  Mermaid: ReviewMermaid,
+  Diagram: ReviewDiagram,
+  Circuit: ReviewCircuit,
+};
+
+// Удаляет потенциально опасные HTML-элементы и атрибуты из исходного MDX до компиляции.
+// Защита от XSS: теги, event handlers, javascript: URI.
+export function stripDangerousHtml(source: string): string {
   return source
-    .replace(/<(script|iframe|object|embed)\b[\s\S]*?<\/\1>/gi, "")
-    .replace(/<(script|iframe|object|embed)\b[^>]*\/>/gi, "");
+    .replace(/<(script|iframe|object|embed|link)\b[\s\S]*?<\/\1>/gi, "")
+    .replace(/<(script|iframe|object|embed|link)\b[^>]*\/?>/gi, "")
+    .replace(/\bon\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]*)/gi, "")
+    .replace(/href\s*=\s*(?:"javascript:[^"]*"|'javascript:[^']*')/gi, "")
+    .replace(/src\s*=\s*(?:"javascript:[^"]*"|'javascript:[^']*')/gi, "");
 }
 
-export async function compileMDX(source: string) {
+export async function compileMDX(
+  source: string,
+  options: { reviewMode?: boolean } = {},
+) {
+  const components = options.reviewMode ? mdxReviewComponents : mdxComponents;
   try {
     const { content } = await compile({
       source: stripDangerousHtml(source),
-      components: mdxComponents,
+      components,
       options: {
         mdxOptions: {
           remarkPlugins: [remarkMath],
@@ -48,6 +70,7 @@ export async function compileMDX(source: string) {
                 keepBackground: false,
               },
             ],
+            rehypeAnchorIds,
           ],
         },
       },

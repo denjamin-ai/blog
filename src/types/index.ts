@@ -71,13 +71,19 @@ export interface ChecklistItem {
 // ---------------------------------------------------------------------------
 
 export type NotificationType =
-  | "review_assigned"
-  | "review_accepted"
-  | "review_declined"
+  | "assignment_created"
+  | "assignment_accepted"
+  | "assignment_declined"
   | "review_completed"
-  | "review_comment"
+  | "review_comment_reply"
+  | "review_comment_reopened"
+  | "public_comment_reply"
   | "article_updated"
-  | "new_article_by_subscribed_author";
+  | "article_hidden"
+  | "new_article_by_subscribed_author"
+  | "article_updated_for_subscribers"
+  | "review_submitted"
+  | "suggestion_applied";
 
 // ---------------------------------------------------------------------------
 // Вспомогательные типы API
@@ -93,4 +99,32 @@ export interface Pagination {
   page: number;
   perPage: number;
   total: number;
+}
+
+// ---------------------------------------------------------------------------
+// Inline Review — anchoring
+// ---------------------------------------------------------------------------
+
+export type AnchorType = "text" | "block" | "general";
+
+export type CommentType = "comment" | "suggestion";
+
+export interface TextQuoteSelector {
+  type: "TextQuoteSelector";
+  exact: string;
+  prefix?: string;
+  suffix?: string;
+}
+
+export interface TextPositionSelector {
+  type: "TextPositionSelector";
+  start: number;
+  end: number;
+}
+
+export interface AnchorData {
+  anchorType: AnchorType;
+  anchorId?: string;
+  selectors: (TextQuoteSelector | TextPositionSelector)[];
+  mdxSourceOffset?: { start: number; end: number };
 }

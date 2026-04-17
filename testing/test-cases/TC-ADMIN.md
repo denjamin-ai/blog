@@ -732,3 +732,108 @@
 ### Test Steps
 1. На `/admin` найти ссылку/кнопку «Руководство»
    **Expected:** Модальное окно или страница с руководством для администратора открывается; контент содержит инструкции по управлению блогом
+
+---
+
+## Inline Annotations (Фаза 30)
+
+**Покрытие:** US-AD32..AD34
+
+---
+
+## TC-AD-ANNO-001: Все аннотации видны включая batch-pending
+
+**US:** US-AD32  
+**Priority:** P0  
+**Type:** Functional  
+**Estimated Time:** 5 мин
+
+### Preconditions
+- [ ] Ревьюер создал pending_batch комментарии (ещё не отправил ревью)
+
+### Test Steps
+1. Войти как admin → открыть `/admin/articles/[id]/review` → выбрать назначение
+   **Expected:** Split-view с подсветками аннотаций; видны ВСЕ аннотации, включая batch-pending
+
+2. Проверить batch-pending комментарии
+   **Expected:** Batch-pending помечены визуально (например, пунктирная подсветка или бейдж «Черновик ревью»)
+
+---
+
+## TC-AD-ANNO-002: Batch-pending видны админу, не видны другим ревьюерам
+
+**US:** US-AD32  
+**Priority:** P0  
+**Type:** Security  
+**Estimated Time:** 5 мин
+
+### Preconditions
+- [ ] Ревьюер 1 создал pending_batch комментарии
+- [ ] Ревьюер 2 назначен на ту же сессию
+
+### Test Steps
+1. `GET /api/sessions/[id]/review-comments` от лица admin
+   **Expected:** Ответ содержит pending_batch комментарии ревьюера 1
+
+2. `GET /api/sessions/[id]/review-comments` от лица ревьюера 2
+   **Expected:** Ответ НЕ содержит pending_batch комментарии ревьюера 1
+
+3. `GET /api/sessions/[id]/review-comments` от лица автора статьи
+   **Expected:** Ответ НЕ содержит pending_batch комментарии
+
+---
+
+## TC-AD-ANNO-003: Ответ от лица администратора с бейджем
+
+**US:** US-AD33  
+**Priority:** P1  
+**Type:** Functional  
+**Estimated Time:** 3 мин
+
+### Preconditions
+- [ ] Ревьюер создал inline-аннотацию (visible)
+
+### Test Steps
+1. В правой панели найти тред → ввести ответ → «Ответить»
+   **Expected:** Ответ появляется с `isAdminComment=1`; визуально помечен бейджем «Админ»
+
+2. Проверить уведомление у ревьюера
+   **Expected:** Ревьюер получил `review_comment_reply`
+
+---
+
+## TC-AD-ANNO-004: Применить suggestion на любой статье
+
+**US:** US-AD34  
+**Priority:** P0  
+**Type:** Functional  
+**Estimated Time:** 5 мин
+
+### Preconditions
+- [ ] Ревьюер создал suggestion на статью другого автора
+
+### Test Steps
+1. Открыть `/admin/articles/[id]/review` → найти suggestion-тред → «Применить правку»
+   **Expected:** MDX-источник обновлён; версия создана в `articleVersions`; тред resolved
+
+2. Проверить статью
+   **Expected:** Предложенный текст заменил оригинал; бейдж «Правка применена»
+
+---
+
+## TC-AD-ANNO-005: Apply → MDX обновлён + notification suggestion_applied
+
+**US:** US-AD34  
+**Priority:** P1  
+**Type:** Functional  
+**Estimated Time:** 3 мин
+
+### Preconditions
+- [ ] Админ применил suggestion (TC-AD-ANNO-004)
+
+### Test Steps
+1. Войти как ревьюер → проверить уведомления
+   **Expected:** Уведомление `suggestion_applied` с ссылкой на статью
+
+2. Войти как автор статьи → проверить уведомления
+   **Expected:** Уведомление об изменении статьи (версия создана)

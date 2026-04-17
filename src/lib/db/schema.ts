@@ -181,6 +181,16 @@ export const reviewComments = sqliteTable("review_comments", {
   quotedText: text("quoted_text"),
   // JSON: { "paragraphIndex": N, "charStart": N, "charEnd": N }
   quotedAnchor: text("quoted_anchor"),
+  // --- Inline review fields ---
+  anchorType: text("anchor_type", { enum: ["text", "block", "general"] }).default("general"),
+  // JSON: { anchorType, anchorId?, selectors: [TextQuoteSelector, TextPositionSelector], mdxSourceOffset? }
+  anchorData: text("anchor_data"),
+  commentType: text("comment_type", { enum: ["comment", "suggestion"] }).default("comment"),
+  suggestionText: text("suggestion_text"),
+  // null = опубликован; non-null = pending в batch ревьюера
+  batchId: text("batch_id"),
+  // Unix seconds, когда suggestion применён
+  appliedAt: integer("applied_at"),
   // self-reference — 1 уровень вложенности, проверка на уровне приложения
   parentId: text("parent_id"),
   createdAt: integer("created_at").notNull(),
@@ -190,7 +200,9 @@ export const reviewComments = sqliteTable("review_comments", {
   resolvedBy: text("resolved_by").references(() => users.id, {
     onDelete: "set null",
   }),
-});
+}, (t) => [
+  index("review_comments_session_batch_idx").on(t.sessionId, t.batchId),
+]);
 
 export const publicComments = sqliteTable(
   "public_comments",
@@ -253,6 +265,8 @@ export const notifications = sqliteTable(
         "article_hidden",
         "new_article_by_subscribed_author",
         "article_updated_for_subscribers",
+        "review_submitted",
+        "suggestion_applied",
       ],
     }).notNull(),
     // JSON с контекстными ID для deep link; читать через JSON.parse с try-catch

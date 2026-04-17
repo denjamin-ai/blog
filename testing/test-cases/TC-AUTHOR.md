@@ -639,3 +639,332 @@
 ### Test Steps
 1. На `/author` или `/author/articles/[id]` найти ссылку/кнопку «Руководство»
    **Expected:** Модальное окно или страница с руководством для авторов открывается; контент содержит инструкции по работе с платформой
+
+---
+
+## Inline Annotations (Фаза 30)
+
+**Покрытие:** US-A32..A35
+
+---
+
+## TC-AU-ANNO-001: Подсветки аннотаций цветом по статусу
+
+**US:** US-A32  
+**Priority:** P0  
+**Type:** Functional  
+**Estimated Time:** 5 мин
+
+### Preconditions
+- [ ] Есть назначение с inline-аннотациями от ревьюера (разные статусы: open и resolved)
+- [ ] Ревьюер отправил ревью (batch submitted → комментарии visible)
+
+### Test Steps
+1. Открыть `/author/articles/[id]/review` → выбрать назначение
+   **Expected:** Split-view: слева MDX с подсветками, справа треды
+
+2. Проверить цвета подсветок
+   **Expected:** Открытые аннотации = жёлтый; resolved = серый
+
+3. Проверить пины в margin
+   **Expected:** Пронумерованные пины с номерами; цвет соответствует статусу
+
+---
+
+## TC-AU-ANNO-002: Клик на подсветку → скролл к треду
+
+**US:** US-A32  
+**Priority:** P1  
+**Type:** Functional  
+**Estimated Time:** 2 мин
+
+### Test Steps
+1. Кликнуть на подсветку в левой панели
+   **Expected:** Правая панель скроллится к соответствующему треду
+
+2. Кликнуть на цитату в треде
+   **Expected:** Левая панель скроллится к подсвеченному фрагменту
+
+---
+
+## TC-AU-ANNO-003: Осиротевшая аннотация → цитата + «Текст изменён»
+
+**US:** US-A32  
+**Priority:** P1  
+**Type:** Edge case  
+**Estimated Time:** 4 мин
+
+### Preconditions
+- [ ] Аннотация привязана к фрагменту, который автор удалил/изменил
+
+### Test Steps
+1. Открыть `/author/articles/[id]/review`
+   **Expected:** Осиротевший тред показывает оригинальную цитату + бейдж «Текст изменён»; подсветка в левой панели отсутствует
+
+---
+
+## TC-AU-ANNO-004: Ответ на inline-аннотацию ревьюера
+
+**US:** US-A33  
+**Priority:** P0  
+**Type:** Functional  
+**Estimated Time:** 4 мин
+
+### Preconditions
+- [ ] Сессия в статусе `open`
+- [ ] Ревьюер оставил inline-аннотацию
+
+### Test Steps
+1. В правой панели найти тред → ввести ответ → «Ответить»
+   **Expected:** Ответ появляется в треде; ревьюер получает уведомление `review_comment_reply`
+
+---
+
+## TC-AU-ANNO-005: Ответ скрыт при completed/declined сессии
+
+**US:** US-A33  
+**Priority:** P1  
+**Type:** Edge case  
+**Estimated Time:** 3 мин
+
+### Preconditions
+- [ ] Назначение в статусе `completed`
+
+### Test Steps
+1. Открыть `/author/articles/[id]/review`
+   **Expected:** Поле ввода ответа скрыто; аннотации видны в read-only режиме
+
+---
+
+## TC-AU-ANNO-006: Применить предложенную правку — MDX обновлён
+
+**US:** US-A34  
+**Priority:** P0  
+**Type:** Functional  
+**Estimated Time:** 5 мин
+
+### Preconditions
+- [ ] Ревьюер создал suggestion на фрагмент текста
+- [ ] Сессия `open`
+
+### Test Steps
+1. Найти тред типа suggestion → кликнуть «Применить правку»
+   **Expected:** Подтверждение применения
+
+2. Подтвердить
+   **Expected:** MDX-источник статьи обновлён: оригинальный фрагмент заменён на предложенный; создана версия в `articleVersions`; тред автоматически resolved; бейдж «Правка применена» на треде
+
+3. Перезагрузить страницу
+   **Expected:** Изменения сохранены; предложенный текст видён в контенте статьи
+
+---
+
+## TC-AU-ANNO-007: Apply на изменённый фрагмент → «Текст изменился»
+
+**US:** US-A34  
+**Priority:** P1  
+**Type:** Edge case  
+**Estimated Time:** 4 мин
+
+### Preconditions
+- [ ] Ревьюер создал suggestion
+- [ ] Автор отредактировал фрагмент, к которому привязан suggestion (текст изменился)
+
+### Test Steps
+1. Попытаться нажать «Применить правку»
+   **Expected:** Кнопка заблокирована; сообщение «Текст изменился, примените вручную»
+
+---
+
+## TC-AU-ANNO-008: Уже применённый suggestion → кнопка заблокирована
+
+**US:** US-A34  
+**Priority:** P1  
+**Type:** Edge case  
+**Estimated Time:** 2 мин
+
+### Preconditions
+- [ ] Suggestion уже применён (resolved)
+
+### Test Steps
+1. Найти применённый suggestion-тред
+   **Expected:** Бейдж «Правка применена»; кнопка «Применить» отсутствует или disabled
+
+---
+
+## TC-AU-ANNO-009: Race condition: 2 apply → первый выигрывает, второй 409
+
+**US:** US-A34  
+**Priority:** P1  
+**Type:** Concurrency  
+**Estimated Time:** 4 мин
+
+### Preconditions
+- [ ] Один suggestion, два параллельных запроса apply (автор + админ)
+
+### Test Steps
+1. Одновременно отправить два `PUT /api/review-comments/[id]/apply-suggestion`
+   **Expected:** Первый запрос → 200 (MDX обновлён); второй → 409 («Текст изменился»)
+
+---
+
+## TC-AU-ANNO-010: Пометить аннотацию как решённую → подсветка серая
+
+**US:** US-A35  
+**Priority:** P0  
+**Type:** Functional  
+**Estimated Time:** 3 мин
+
+### Preconditions
+- [ ] Открытая аннотация от ревьюера
+
+### Test Steps
+1. В правой панели на треде → «Решить»
+   **Expected:** Подсветка меняется на серую; пин серый; `resolvedAt` + `resolvedBy` заполнены
+
+2. Проверить что ревьюер может переоткрыть
+   **Expected:** Ревьюер видит кнопку «Переоткрыть» (US-RV16)
+
+### Edge Cases
+| Сценарий | Expected |
+|----------|----------|
+| Назначение `completed`/`declined` | Кнопка «Решить» скрыта |
+
+---
+
+## TC-AU-ANNO-011: Уведомление suggestion_applied отправлено ревьюеру
+
+**US:** US-A34  
+**Priority:** P1  
+**Type:** Functional  
+**Estimated Time:** 3 мин
+
+### Preconditions
+- [ ] Автор применил suggestion (TC-AU-ANNO-006)
+
+### Test Steps
+1. Войти как ревьюер → проверить уведомления
+   **Expected:** Уведомление типа `suggestion_applied` с ссылкой на статью и тред
+
+---
+
+## UX Review Hub (Фаза 34)
+
+## TC-AU-UX-001: `/author/articles` — секция «На ревью» показывает статьи
+
+**US:** US-AU-UX  
+**Priority:** P0  
+**Type:** Functional  
+**Estimated Time:** 3 мин
+
+### Preconditions
+- [ ] Автор имеет статью со статусом pending/accepted reviewAssignment
+
+### Test Steps
+1. Открыть `/author/articles`
+   **Expected:** Над таблицей секция «На ревью» с карточкой статьи; видно количество ревьюеров + бейдж с числом открытых замечаний (если есть)
+
+2. Фильтр `?filter=review`
+   **Expected:** Показана только секция «На ревью», таблица со всеми статьями скрыта
+
+---
+
+## TC-AU-UX-002: Клик по карточке «На ревью» → unified review page
+
+**US:** US-AU-UX  
+**Priority:** P0  
+**Type:** Functional  
+**Estimated Time:** 2 мин
+
+### Test Steps
+1. Клик по карточке «На ревью»
+   **Expected:** Переход на `/author/articles/{id}/review`; загружается unified view (MDX + sidebar chips)
+
+---
+
+## TC-AU-UX-003: Unified page показывает комментарии всех ревьюеров
+
+**US:** US-AU-UX  
+**Priority:** P0  
+**Type:** Functional  
+**Estimated Time:** 4 мин
+
+### Preconditions
+- [ ] 2+ ревьюера с комментариями на статье
+
+### Test Steps
+1. Открыть unified page
+   **Expected:** Все комментарии обоих ревьюеров видны в сайдбаре; каждый тред имеет бейдж с именем ревьюера; цвет бейджа стабилен и уникален для каждого ревьюера
+
+2. Проверить контраст бейджей в обеих темах (light/dark)
+   **Expected:** Контраст текст/фон ≥ 4.5:1 (WCAG AA)
+
+---
+
+## TC-AU-UX-004: Chips-фильтр по ревьюеру
+
+**US:** US-AU-UX  
+**Priority:** P1  
+**Type:** Functional  
+**Estimated Time:** 3 мин
+
+### Test Steps
+1. В unified view кликнуть на chip конкретного ревьюера
+   **Expected:** В списке тредов остались только комментарии этого ревьюера
+
+2. Кликнуть повторно на тот же chip или «Все»
+   **Expected:** Фильтр сброшен, все комментарии видны
+
+---
+
+## TC-AU-UX-005: Apply suggestion — бейдж «Применена», toast, collapse
+
+**US:** US-AU-UX  
+**Priority:** P0  
+**Type:** Functional  
+**Estimated Time:** 4 мин
+
+### Preconditions
+- [ ] Автор в unified view, есть thread с suggestion (не применён)
+
+### Test Steps
+1. Кликнуть «Применить» в треде-suggestion
+   **Expected:** Появляется toast «Правка применена» (2.5 с); тред меняет бордер на зелёный; пин становится «✓»; бейдж «Применена» виден; исходник suggestion сворачивается в `<details>`
+
+2. Перезагрузить страницу
+   **Expected:** Состояние «Применена» сохранено (возвращается с сервера, `appliedAt !== null`)
+
+### Edge Cases
+| Сценарий | Expected |
+|----------|----------|
+| Race (повторный клик) | 409 → toast «Правка уже применена», refreshComments |
+| Контент изменился | 422 → модал с diff (original/suggestion) |
+
+---
+
+## TC-AU-UX-006: Кнопка «Открыть сессию N» — deep-link
+
+**US:** US-AU-UX  
+**Priority:** P1  
+**Type:** Functional  
+**Estimated Time:** 2 мин
+
+### Test Steps
+1. В сайдбаре unified view кликнуть на ссылку конкретного ревьюера («Открыть отдельные сессии»)
+   **Expected:** Переход на `/author/articles/{id}/review/{assignmentId}`; старый single-reviewer view работает (обратная совместимость)
+
+---
+
+## TC-AU-UX-007: Дизайн — тред-карточка без nested-borders
+
+**US:** US-AU-UX  
+**Priority:** P2  
+**Type:** Visual / Regression  
+**Estimated Time:** 3 мин
+
+### Test Steps
+1. Открыть unified view с несколькими тредами
+   **Expected:** Каждый тред имеет только `border-l-4` цветного статуса (open=warning, applied=success, resolved=success/60, orphan=danger, pending=muted); нет `rounded-lg border` вокруг карточки; reply-блоки не имеют собственной рамки
+
+2. Переключить тему dark/light
+   **Expected:** Цвета бордеров соответствуют CSS-переменным; контраст сохранён

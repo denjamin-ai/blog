@@ -10,7 +10,6 @@ import {
 import { eq, and, ne } from "drizzle-orm";
 import { compileMDX } from "@/lib/mdx";
 import { notFound, redirect } from "next/navigation";
-import Link from "next/link";
 import { ReviewAssignmentView } from "./review-view";
 
 export const dynamic = "force-dynamic";
@@ -94,29 +93,20 @@ export default async function AssignmentDetailPage({
     }));
   }
 
-  const content = await compileMDX(version.content);
+  const content = await compileMDX(version.content, { reviewMode: true });
 
   return (
-    <>
-      <div className="mb-4 flex justify-end">
-        <Link
-          href={`/reviewer/assignments/${id}/versions`}
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          История версий
-        </Link>
-      </div>
-      <ReviewAssignmentView
-        assignmentId={id}
-        sessionId={assignment.sessionId ?? null}
-        sessionStatus={sessionStatus}
-        sessionParticipants={sessionParticipants}
-        currentUserId={session.userId ?? null}
-        status={assignment.status}
-        articleTitle={article?.title ?? version.title}
-      >
-        {content}
-      </ReviewAssignmentView>
-    </>
+    <ReviewAssignmentView
+      assignmentId={id}
+      sessionId={assignment.sessionId ?? null}
+      sessionStatus={sessionStatus}
+      sessionParticipants={sessionParticipants}
+      currentUserId={session.userId ?? null}
+      status={assignment.status}
+      articleTitle={article?.title ?? version.title}
+      versionsHref={`/reviewer/assignments/${id}/versions`}
+    >
+      {content}
+    </ReviewAssignmentView>
   );
 }

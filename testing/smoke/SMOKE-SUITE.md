@@ -9,7 +9,7 @@
 
 ## Критерии прохода/провала
 
-**PASS:** Все 20 тестов прошли  
+**PASS:** Все 22 теста прошли  
 **FAIL (стоп деплоя):** Любой тест провалился
 
 ---
@@ -49,7 +49,7 @@
 **Priority:** P0 | **Time:** 2 мин
 
 1. Открыть `/login`, ввести `reader` / `password`
-   **Expected:** Редирект на `/`; сессия установлена (`role=reader`)
+   **Expected:** Редирект на `/reader` (feed подписок); сессия установлена (`role=reader`)
 
 ---
 
@@ -226,6 +226,65 @@
 
 ---
 
+## SMOKE-IR-001: Inline review — выделение текста + комментарий
+
+**Priority:** P0 | **Time:** 3 мин
+
+### Preconditions
+- [ ] Авторизован как reviewer; есть assignment в статусе `accepted`
+
+1. Открыть `/reviewer/assignments/[id]`
+   **Expected:** Двухпанельный layout отображается
+
+2. Выделить текст в панели статьи → нажать «Комментарий» в popover → ввести текст → отправить
+   **Expected:** Комментарий появляется в sidebar; текст подсвечен в статье
+
+---
+
+## SMOKE-IR-002: Inline review — suggestion apply
+
+**Priority:** P0 | **Time:** 3 мин
+
+### Preconditions
+- [ ] Reviewer создал и отправил suggestion через batch review
+- [ ] Авторизован как author (владелец статьи)
+
+1. Открыть ревью страницу → найти suggestion → «Применить»
+   **Expected:** Текст в статье заменён; suggestion отмечен как applied
+
+---
+
+## SMOKE-RV-DIAG-001: Ревью статьи с диаграммой не падает (регресс Фаза 34a)
+
+**Priority:** P0 | **Time:** 2 мин
+
+### Preconditions
+- [ ] Статья содержит `<Mermaid/>`, `<Diagram/>` или `<Circuit/>`
+- [ ] Ревьюер в accepted статусе
+
+### Steps
+1. Открыть DevTools → Console
+2. Открыть `/reviewer/assignments/{id}`
+   **Expected:** Консоль без ошибок `Cannot read properties of undefined (reading 'replace')`; рендер диаграммы виден; есть `<details>` «Показать исходник»
+
+---
+
+## SMOKE-AU-UX-001: Автор попадает на unified review через «На ревью»
+
+**Priority:** P0 | **Time:** 2 мин
+
+### Preconditions
+- [ ] У автора есть статья с активным назначением ревьюера
+
+### Steps
+1. Открыть `/author/articles`
+   **Expected:** Видна секция «На ревью» с карточкой статьи
+
+2. Кликнуть по карточке
+   **Expected:** Открылся `/author/articles/{id}/review` — unified view с MDX статьи и sidebar с комментариями; chips-фильтр ревьюеров виден
+
+---
+
 ## Чеклист выполнения
 
 | Тест | Статус | Комментарий |
@@ -250,8 +309,12 @@
 | SMOKE-REVIEW-001 | ☐ | |
 | SMOKE-CHAT-001 | ☐ | |
 | SMOKE-GUIDE-001 | ☐ | |
+| SMOKE-IR-001 | ☐ | |
+| SMOKE-IR-002 | ☐ | |
+| SMOKE-RV-DIAG-001 | ☐ | |
+| SMOKE-AU-UX-001 | ☐ | |
 
-**Итог:** ___/20 прошли  
+**Итог:** ___/24 прошли  
 **Тестировщик:** ________________  
 **Дата:** ________________  
 **Версия/Билд:** ________________  

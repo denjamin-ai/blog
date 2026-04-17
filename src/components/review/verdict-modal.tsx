@@ -60,7 +60,7 @@ export function VerdictModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div className="bg-background border border-border rounded-xl shadow-xl w-full max-w-md mx-4 p-6">

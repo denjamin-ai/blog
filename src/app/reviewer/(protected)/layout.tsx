@@ -22,12 +22,12 @@ export default async function ReviewerLayout({
   return (
     <div className="min-h-screen">
       <nav className="border-b border-border bg-muted/50">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-6">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between flex-wrap gap-y-2">
+          <div className="flex items-center gap-4 sm:gap-6 flex-wrap">
             <Link href="/reviewer" className="font-bold text-lg">
               Ревью
             </Link>
-            <div className="flex gap-4 text-sm">
+            <div className="flex gap-3 sm:gap-4 text-sm flex-wrap">
               <Link
                 href="/reviewer/assignments"
                 className="text-muted-foreground hover:text-foreground transition-colors"

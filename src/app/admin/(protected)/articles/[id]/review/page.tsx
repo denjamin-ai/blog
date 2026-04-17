@@ -4,9 +4,31 @@ import { requireAdmin } from "@/lib/auth";
 import { eq, desc } from "drizzle-orm";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import AssignmentThread from "./assignment-thread";
+import { VerdictBadge } from "@/components/review/verdict-badge";
 
 export const dynamic = "force-dynamic";
+
+const STATUS_LABELS: Record<string, string> = {
+  pending: "Ожидает",
+  accepted: "Принято",
+  declined: "Отклонено",
+  completed: "Завершено",
+};
+
+const STATUS_COLORS: Record<string, string> = {
+  pending: "bg-warning-bg text-warning",
+  accepted: "bg-info-bg text-info",
+  declined: "bg-danger-bg text-danger",
+  completed: "bg-success-bg text-success",
+};
+
+function formatDate(unix: number) {
+  return new Date(unix * 1000).toLocaleString("ru-RU", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
 
 export default async function ArticleReviewPage({
   params,
@@ -32,7 +54,6 @@ export default async function ArticleReviewPage({
       verdictNote: reviewAssignments.verdictNote,
       createdAt: reviewAssignments.createdAt,
       reviewerName: users.name,
-      reviewerUsername: users.username,
     })
     .from(reviewAssignments)
     .leftJoin(users, eq(reviewAssignments.reviewerId, users.id))
@@ -63,17 +84,37 @@ export default async function ArticleReviewPage({
           </Link>
         </p>
       ) : (
-        <div className="space-y-6 max-w-3xl">
+        <div className="space-y-3 max-w-3xl">
           {assignments.map((a) => (
-            <AssignmentThread
+            <Link
               key={a.id}
-              assignmentId={a.id}
-              reviewerName={a.reviewerName ?? "Неизвестный ревьер"}
-              status={a.status}
-              createdAt={a.createdAt}
-              verdict={a.verdict}
-              verdictNote={a.verdictNote}
-            />
+              href={`/admin/articles/${id}/review/${a.id}`}
+              className="block rounded-lg border border-border p-4 hover:border-accent/50 hover:bg-accent/5 transition-colors"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium">
+                    {a.reviewerName ?? "Ревьюер"}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {formatDate(a.createdAt)}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {a.verdict && <VerdictBadge verdict={a.verdict} />}
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[a.status] ?? "bg-muted text-muted-foreground"}`}
+                  >
+                    {STATUS_LABELS[a.status] ?? a.status}
+                  </span>
+                </div>
+              </div>
+              {a.verdictNote && (
+                <p className="mt-2 text-xs text-muted-foreground italic truncate">
+                  {a.verdictNote}
+                </p>
+              )}
+            </Link>
           ))}
         </div>
       )}

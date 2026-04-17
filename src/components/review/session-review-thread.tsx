@@ -154,7 +154,7 @@ export function SessionReviewThread({
   });
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full min-h-0">
       {/* Session status banner */}
       {sessionStatus !== "open" && (
         <div className="px-4 py-2 bg-muted/40 border-b border-border shrink-0">
@@ -199,7 +199,7 @@ export function SessionReviewThread({
       )}
 
       {/* Comments thread */}
-      <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-3">
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-3 flex flex-col gap-3">
         {filteredComments.length === 0 && (
           <p className="text-xs text-muted-foreground text-center py-6">
             {totalComments === 0

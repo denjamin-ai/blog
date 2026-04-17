@@ -47,6 +47,10 @@
 | 27. Страница «Руководство» | Done | 2026-04-16 |
 | 28. E2E тесты фаз 26–27 | Done | 2026-04-16 |
 | 29. Доработки UX — авторизация, медиа, руководство | Done | 2026-04-16 |
+| 30. Inline Review: схема + anchoring engine | Planned | — |
+| 31. Inline Review: UI выделения и тредов | Planned | — |
+| 32. Inline Review: suggestions + batch review | Planned | — |
+| 33. Inline Review: ревью + E2E | Planned | — |
 
 ---
 
@@ -996,3 +1000,625 @@ canAccessSessionChat(session, articleAuthorId):
 - **Test cases (P0)**: 29/29 PASS
 - **Всего**: 57/57
 - **Вердикт**: GO
+
+---
+
+### Фаза 30: Inline Review — схема + anchoring engine (Done — 2026-04-17)
+
+**Контекст**: Требуется расширить систему ревью inline-аннотациями: ревьюер может привязать комментарий к конкретному фрагменту текста (TextQuoteSelector + TextPositionSelector + MDX source offset), оставить suggestion (предложить замену текста), отправить все замечания batch-ом. Покрытие: US-RV6–RV8 (обновлены), US-RV17–RV23, US-A32–A35, US-AD32–AD34.
+
+**Scope:** Расширение DB-схемы для inline-аннотаций (тройной селектор, тип комментария, batch-статус). Rehype-плагин для стабильных `data-anchor-id`. Серверная библиотека anchoring (fuzzy re-anchoring через `diff-match-patch`). API-эндпоинты.
+
+---
+
+#### 30a — Схема и миграция
+
+**Изменения в `src/lib/db/schema.ts`** — таблица `reviewComments`:
+
+Новые поля:
+- `anchorType: text("anchor_type", { enum: ["text", "block", "general"] }).default("general")`
+- `anchorData: text("anchor_data")` — JSON: `{ selectors: [TextQuoteSelector, TextPositionSelector, MdxSourceOffset], blockId?, lineNumber? }`
+- `commentType: text("comment_type", { enum: ["comment", "suggestion"] }).default("comment")`
+- `suggestionText: text("suggestion_text")` — предложенный текст для типа suggestion
+- `batchId: text("batch_id")` — `null` = опубликован; non-null = pending в batch
+- `appliedAt: integer("applied_at")` — Unix seconds, когда suggestion применён
+
+Индекс: `index` на `(sessionId, batchId)` для быстрой фильтрации.
+
+**Задачи:**
+- `npx drizzle-kit generate` → проверить SQL-миграцию
+- `npx drizzle-kit migrate` → применить
+- Обновить `seed.test.ts` при необходимости (пример inline-комментария)
+- `npm run build` → 0 ошибок TypeScript
+
+**Файлы:** `src/lib/db/schema.ts`, `drizzle/XXXX_*.sql`
+
+---
+
+#### 30b — Rehype-плагин для стабильных anchor ID
+
+**Новый файл:** `src/lib/rehype-anchor-ids.ts`
+
+Rehype-плагин, который обходит HAST-дерево и добавляет `data-anchor-id` атрибуты:
+- Текстовые блоки (`p`, `li`, `h1-h6`, `blockquote`, `td`) → `data-anchor-id = sha256(позиция в дереве + первые 32 символа текста)[:12]`
+- Code blocks → `data-anchor-id` на `<pre>` + `data-line-id` на каждом `<span data-line>` (номер строки)
+- KaTeX (`.katex-display`, `.katex`) → `data-anchor-id` на обёртке
+- Mermaid/Diagram/Circuit → `data-anchor-id` на контейнере
+
+**Интеграция:**
+- Подключить в `src/lib/mdx.ts` — в rehype pipeline после `rehype-pretty-code` и `rehype-katex`
+- Подключить в `src/app/api/preview/route.ts` (preview pipeline)
+
+**Файлы:** `src/lib/rehype-anchor-ids.ts` (новый), `src/lib/mdx.ts`, `src/app/api/preview/route.ts`
+
+---
+
+#### 30c — Клиентская библиотека anchoring
+
+**Зависимость:** `npm install diff-match-patch` (fuzzy matching)
+
+**Новый файл:** `src/lib/anchoring.ts` (клиентская библиотека)
+
+```
+createAnchor(range: Range, container: HTMLElement): AnchorData
+```
+Из `Selection.getRangeAt(0)` генерирует:
+- `TextQuoteSelector`: exact (выделенный текст), prefix (32 символа до), suffix (32 символа после)
+- `TextPositionSelector`: start, end (character offset от container)
+- `mdxSourceOffset`: ближайший `data-anchor-id` элемент
+
+```
+resolveAnchor(anchorData: AnchorData, container: HTMLElement): Range | null
+```
+Каскад re-anchoring:
+1. Exact position + exact quote match
+2. Fuzzy match через diff-match-patch (Bitap, threshold 0.4)
+3. Full-document fuzzy search
+4. `null` (orphan)
+
+```
+isOrphan(anchorData: AnchorData, container: HTMLElement): boolean
+```
+Быстрая проверка: `resolveAnchor === null`
+
+**Типы** — добавить в `src/types/index.ts`:
+- `AnchorData`, `TextQuoteSelector`, `TextPositionSelector`, `AnchorType`, `CommentType`
+
+**Файлы:** `src/lib/anchoring.ts` (новый), `src/types/index.ts`
+
+---
+
+#### 30d — API-эндпоинты
+
+**Обновить** `POST /api/sessions/[id]/review-comments`:
+- Новые поля в body: `anchorType`, `anchorData`, `commentType`, `suggestionText`, `batchId`
+- Валидация:
+  - `anchorType === "text"` → `anchorData` обязателен, должен содержать `selectors[]`
+  - `anchorType === "block"` → `anchorData.blockId` обязателен
+  - `commentType === "suggestion"` → `suggestionText` обязателен
+  - `batchId`: если передан, привязывает к текущему batch ревьюера
+
+**Обновить** `GET /api/sessions/[id]/review-comments`:
+- Для author/admin: фильтровать `batchId IS NULL` (не показывать pending batch чужого ревьюера)
+- Для reviewer (owner): показывать всё включая свои pending batch
+- Для admin: показывать всё включая pending batch всех ревьюеров
+- В ответе добавить `anchorType`, `anchorData`, `commentType`, `suggestionText`, `appliedAt`
+
+**Новый** `PUT /api/review-comments/[id]/apply-suggestion`:
+- Auth: `requireAuthor()` или `requireAdmin()`
+- Проверки: `commentType === "suggestion"`, `appliedAt === null`, назначение не `completed`/`declined`
+- Логика:
+  1. Получить MDX-источник статьи
+  2. Exact match `anchorData.selectors[0].exact` в MDX
+  3. Если не найден → 409 «Текст изменился»
+  4. Заменить фрагмент на `suggestionText` (только первое вхождение)
+  5. Snapshot в `articleVersions` перед заменой
+  6. Обновить статью
+  7. `appliedAt = now()`, auto-resolve тред
+  8. Уведомить ревьюера: `suggestion_applied`
+  9. Sanitize `suggestionText` через `stripDangerousHtml()` перед apply
+- Ответ: `{ applied: true }`
+
+**Новый** `POST /api/assignments/[id]/submit-review`:
+- Auth: `requireUser("reviewer")` + ownership
+- Логика:
+  1. Найти все `review_comments` с `batchId` текущего ревьюера
+  2. Обнулить `batchId` (сделать видимыми)
+  3. Обновить assignment `verdict`/`verdictNote` если переданы
+  4. Отправить уведомление `review_submitted` автору/админу
+- Ответ: `{ submitted: N, verdict: "..." }`
+
+**Обновить `NotificationType`** в `src/types/index.ts`: добавить `'review_submitted'`, `'suggestion_applied'`
+
+**Файлы:**
+- `src/app/api/sessions/[id]/review-comments/route.ts` — обновлён
+- `src/app/api/review-comments/[id]/apply-suggestion/route.ts` — новый
+- `src/app/api/assignments/[id]/submit-review/route.ts` — новый
+- `src/types/index.ts` — обновлён
+- `src/lib/db/schema.ts` — notification type enum
+
+**Валидация фазы 30:**
+- `npm run build` OK
+- `npx drizzle-kit migrate` OK
+- Existing E2E tests pass (регресс)
+
+---
+
+### Фаза 31: Inline Review — UI выделения и тредов (Done — 2026-04-17)
+
+**Контекст**: Клиентские компоненты для inline-ревью: подсветка аннотаций в тексте статьи, floating popover при выделении текста, sidebar с тредами, пронумерованные пины в margin, кнопка комментирования блоков (код, формулы, диаграммы). Split-pane layout для reviewer/author/admin.
+
+**Scope:** 6 новых клиентских компонентов в `src/components/review/`, обновление 3 страниц порталов. Особый упор на UI/UX: плавные анимации, accessibility, responsive (mobile stack).
+
+---
+
+#### 31a — Highlight rendering + popover
+
+**Новый** `src/components/review/highlight-layer.tsx` (`'use client'`):
+- Props: `annotations` (из API), `containerRef`, `filter` (текущий фильтр тредов)
+- На mount: для каждой аннотации вызывает `resolveAnchor()` из `src/lib/anchoring.ts`
+- **Подсветка через CSS Custom Highlight API**:
+  - Создать `Range` для каждого resolved anchor
+  - `new Highlight(...ranges)`, `CSS.highlights.set('review-open', hl)` / `CSS.highlights.set('review-resolved', hl)`
+  - CSS: `::highlight(review-open) { background: oklch(85% 0.15 80 / 0.3) }` (жёлтый)
+  - CSS: `::highlight(review-resolved) { background: var(--muted) / 0.15 }` (серый)
+- **Fallback** для старых браузеров: оборачивание в `<mark data-comment-id>`
+- При клике на подсвеченную область: `onAnnotationClick(commentId)` — hit-test через `document.caretPositionFromPoint()`
+- Orphan annotations: не подсвечиваются, но показываются в sidebar с бейджем «⚠ Текст изменён»
+- **Анимация**: при активации тред → подсветка мигает (пульс opacity) на 1 сек
+- **Accessibility**: `role="mark"` на fallback-`<mark>`, `aria-describedby` ссылка на тред
+
+**Новый** `src/components/review/selection-popover.tsx` (`'use client'`):
+- Слушает `selectionchange` на контейнере
+- При непустом выделении → floating popover (позиционирование через `getBoundingClientRect()`)
+- Кнопки:
+  - «💬 Комментировать» → `onComment(range)`
+  - «✏️ Предложить правку» → `onSuggest(range)`
+  - «📌 Цитировать в тред» → `onQuote(range)` (список открытых тредов)
+- Скрывается при: клик вне, пустое выделение, Escape
+- НЕ показывается: внутри SVG (Mermaid), если статус не `pending`/`accepted`, если выделение пересекает границу MDX-компонента (`[data-anchor-id]` разных типов)
+- **Дизайн**: `bg-elevated`, `rounded-lg`, `shadow-md`, `border border-border`, `animate-in` fadeIn 150ms; кнопки `px-3 py-1.5 text-sm hover:bg-muted rounded`; `z-[60]` (выше scroll-progress)
+- **Mobile**: popover позиционируется под выделением (не перекрывает текст)
+
+**Новый** `src/components/review/block-comment-button.tsx` (`'use client'`):
+- На hover элемента с `[data-anchor-id]` типа `pre`, `.katex-display`, `.mermaid-container`, `figure` → кнопка «💬» слева от блока
+- При клике: `onBlockComment(anchorId, blockType)`
+- **Дизайн**: `opacity-0 group-hover:opacity-100 transition-opacity`, `bg-elevated rounded-full shadow-sm w-7 h-7`, `absolute -left-10`
+- **Accessibility**: `aria-label="Комментировать блок"`
+
+**Файлы:** `src/components/review/highlight-layer.tsx`, `src/components/review/selection-popover.tsx`, `src/components/review/block-comment-button.tsx`, `src/app/globals.css` (highlight CSS)
+
+---
+
+#### 31b — Sidebar тредов + margin pins
+
+**Новый** `src/components/review/review-sidebar.tsx` (`'use client'`):
+- Props: `comments`, `activeCommentId`, `filter`, `onReply`, `onResolve`, `onReopen`, `onScrollToAnchor`
+- **Фильтры** вверху: 5 табов «Все» / «Открытые» / «Решённые» / «Предложения» / «Без ответа» — счётчики в каждом табе
+- Список тредов: каждый тред = `ReviewThread` компонент
+- Скролл к active тред при изменении `activeCommentId` (`scrollIntoView({ behavior: 'smooth', block: 'nearest' })`)
+- Empty state: SVG-иконка + «Ревьюер пока не оставил замечаний»
+- **Дизайн**: `overflow-y-auto`, `divide-y divide-border`, фильтр-табы `flex gap-1 p-1 bg-muted/30 rounded-lg` с `text-xs font-medium`, active tab `bg-elevated shadow-sm`
+- **Progress bar** вверху (US-RV19): `Открыто: N · Решено: M · Предложения: K · Чеклист: X/Y`; тонкая полоска `h-1 bg-accent rounded-full` width = (resolved + applied) / total; скрыт если нет комментариев
+
+**Новый** `src/components/review/review-thread.tsx` (`'use client'`):
+- Props: `comment` (root), `replies[]`, `isActive`, `onReply`, `onResolve`, `onReopen`, `onScrollToAnchor`, `onApplySuggestion`, `canApply` (author/admin)
+- **Header**: пин-номер + quoted text (если `anchorType` text/block) + тип (`comment`/`suggestion`)
+- Quoted text кликабельный → `onScrollToAnchor(anchorData)` → левая панель скроллится к фрагменту
+- **Suggestion display**: оригинал (красный фон `bg-danger-bg`, зачёркнутый `line-through`) + предложенный текст (зелёный фон `bg-success-bg`); кнопка «Применить» (видна только author/admin, `bg-accent text-white rounded px-3 py-1 text-sm`)
+- **Applied badge**: `bg-success-bg text-success rounded-full px-2 py-0.5 text-xs` «✓ Правка применена»
+- **Orphan badge**: `bg-warning-bg text-warning rounded-full px-2 py-0.5 text-xs` «⚠ Текст изменён» + оригинальная цитата курсивом
+- **Replies**: вложенный список с `ml-4 border-l-2 border-border`
+- **Input**: `textarea` + «Ответить» (скрыт если `completed`/`declined`); `isAdminComment` бейдж на admin-ответах
+- **Resolve/Reopen**: кнопки по ролям (как в текущей реализации); `resolvedAt` → серый фон `bg-muted/20`
+- **Batch-pending визуал**: пунктирная левая border `border-dashed border-warning`, лейбл «Черновик — видно только вам» `text-xs text-warning`
+- **Анимация**: новый тред `animate-in` fadeInUp; resolve → плавный переход цвета 300ms
+
+**Новый** `src/components/review/margin-pins.tsx` (`'use client'`):
+- Props: `annotations` (resolved anchors с координатами), `onPinClick`
+- Рендерит пронумерованные пины в абсолютной позиции вдоль правого margin контентной панели
+- **Алгоритм stacking**: сортировка по `anchorTop`, размещение с `min-gap: 28px` (если перекрываются → сдвиг вниз)
+- **Дизайн**: `w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center`; открытые = `bg-accent text-white`; resolved = `bg-muted text-foreground/50`; active = `ring-2 ring-accent ring-offset-2`
+- При клике → `onPinClick(commentId)`
+- **Accessibility**: `role="button"`, `aria-label="Замечание N"`
+
+**Файлы:** `src/components/review/review-sidebar.tsx`, `src/components/review/review-thread.tsx`, `src/components/review/margin-pins.tsx`
+
+---
+
+#### 31c — Split-pane layout для reviewer, author, admin
+
+**Обновить** `src/app/reviewer/(protected)/assignments/[id]/page.tsx`:
+- **Split-pane layout**: `grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-0`
+  - Left = MDX article (`prose`) + `HighlightLayer` + `SelectionPopover` + `BlockCommentButton` + `MarginPins`
+  - Right = `ReviewSidebar`
+- **Состояние**: `activeCommentId`, `filter`, `pendingBatch[]` (массив id для batch review)
+- **Scroll synchronization**: клик на тред → scroll article to anchor; клик на highlight/pin → scroll sidebar to thread
+- **Mobile** (`< lg`): stack вертикально, article сверху, sidebar снизу с `max-h-[50vh] overflow-y-auto`
+- **Resize handle**: вертикальная полоска между панелями, `cursor-col-resize`, drag для изменения пропорций (CSS custom property `--split`, сохранять в localStorage)
+
+**Обновить** `src/app/author/(protected)/articles/[id]/review/page.tsx`:
+- Split-pane: left = MDX (текущая версия) с `HighlightLayer` + `MarginPins`; right = `ReviewSidebar` (read + reply + resolve + apply suggestion)
+- Автор **НЕ** видит `SelectionPopover` (не может создавать аннотации)
+- Автор видит кнопку «Применить» на suggestion-тредах
+
+**Обновить** `src/app/admin/(protected)/articles/[id]/review/page.tsx`:
+- Аналогично автору, но admin может отвечать с `isAdminComment=1`
+- Admin может apply suggestions на любую статью
+- Admin видит batch-pending комментарии всех ревьюеров
+
+**Обратная совместимость**: старые комментарии (`anchorType=general`) отображаются как раньше — без подсветки, просто в списке тредов
+
+**Файлы:**
+- `src/app/reviewer/(protected)/assignments/[id]/page.tsx` — обновлён
+- `src/app/author/(protected)/articles/[id]/review/page.tsx` — обновлён (или новый)
+- `src/app/admin/(protected)/articles/[id]/review/page.tsx` — обновлён (или новый)
+
+**Валидация фазы 31:**
+- `npm run build` OK
+- Визуально: reviewer page показывает split-pane, выделение текста → popover, подсветки аннотаций, треды в sidebar, пины в margin
+- Mobile: stack layout, sidebar scrollable
+- Accessibility: focus management, aria-labels, keyboard tab order
+
+---
+
+### Фаза 32: Inline Review — suggestions + batch review (Done — 2026-04-17)
+
+**Контекст**: Полный flow применения suggestion (MDX замена + версионирование + re-anchoring). Batch review (pending → publish). Клавиатурная навигация. Diff overlay.
+
+**Scope:** Suggestion apply UI, batch review bar + modal, keyboard shortcuts, diff overlay layer.
+
+---
+
+#### 32a — Suggestion apply flow
+
+**В `review-thread.tsx`:**
+- Кнопка «Применить правку» на suggestion-тредах → `PUT /api/review-comments/[id]/apply-suggestion`
+- **Optimistic UI**: кнопка → spinner (`animate-spin`) → «✓ Применено» (`bg-success-bg`)
+- **Ошибка 409** → показать inline: «Текст изменился, примените вручную» + оригинал + suggestion (side-by-side в thread)
+- После apply: refetch комментариев, re-resolve все anchors (подсветки обновляются)
+
+**Серверная логика apply** (`PUT /api/review-comments/[id]/apply-suggestion`):
+1. Exact match `anchorData.selectors[0].exact` в текущем MDX-источнике
+2. `String.replace(exactMatch, suggestionText)` — только первое вхождение
+3. Если exactMatch не найден → fuzzy search через `diff-match-patch`:
+   - `>80%` match → apply + предупреждение в ответе
+   - Не найден → 409
+4. `stripDangerousHtml(suggestionText)` перед заменой (XSS protection)
+5. Snapshot в `articleVersions` перед заменой
+6. Обновить статью, `appliedAt = now()`, auto-resolve тред, уведомить ревьюера
+
+**Файлы:** `src/components/review/review-thread.tsx`, `src/app/api/review-comments/[id]/apply-suggestion/route.ts`
+
+---
+
+#### 32b — Batch review
+
+**Состояние в reviewer page:**
+- Все новые комментарии создаются с `batchId = ulid()` (генерируется при первом комментарии сессии, хранится в `useRef`)
+- Pending комментарии визуально: пунктирная рамка `border-dashed border-warning` + лейбл «Черновик — видно только вам»
+
+**Новый** `src/components/review/batch-review-bar.tsx` (`'use client'`):
+- Sticky bar внизу viewport: `fixed bottom-0 left-0 right-0 bg-elevated border-t border-border shadow-lg z-40 px-4 py-3`
+- Содержимое: «N замечаний в черновике · **Отправить ревью**»
+- Скрыт если нет pending комментариев
+- Кнопка → открывает `BatchReviewModal`
+- **Анимация**: slide-up при появлении, slide-down при исчезновении
+
+**Новый** `src/components/review/batch-review-modal.tsx` (`'use client'`):
+- `<dialog>` (паттерн как `ReviewerPickerModal`)
+- Содержимое:
+  - Список pending комментариев (readonly, scrollable, max-h)
+  - Вердикт: `approved` / `needs_work` / `rejected` (radio buttons, обязателен)
+  - Общая заметка (textarea, опциональна)
+  - «Отправить» → `POST /api/assignments/[id]/submit-review`
+- После отправки: pending комментарии становятся видимыми, bar исчезает, toast «Ревью отправлено»
+- **Дизайн**: `max-w-lg`, вердикт radio — цветные карточки (approved=`border-success`, needs_work=`border-warning`, rejected=`border-danger`)
+
+**Обновить** `NotificationType` в schema: добавить `'review_submitted'`
+
+**Файлы:** `src/components/review/batch-review-bar.tsx`, `src/components/review/batch-review-modal.tsx`, `src/app/reviewer/(protected)/assignments/[id]/page.tsx`, `src/lib/db/schema.ts`
+
+---
+
+#### 32c — Keyboard navigation + diff overlay
+
+**Keyboard navigation** (`useEffect` на `keydown` в reviewer assignments page):
+- `N`: next unresolved thread → scroll both panels
+- `P`: previous unresolved thread
+- `R`: resolve active thread
+- `E`: focus reply input в active thread
+- `C`: если есть Selection → trigger comment popover
+- `⌘↵` / `Ctrl+Enter`: submit текущий reply
+- **Guard**: shortcuts отключены когда фокус в `textarea`/`input` (кроме `⌘↵`)
+- **Визуал**: при навигации N/P подсветка anchor мигает 1 сек (`animate-[pulse_1s_ease-in-out]`)
+
+**Новый** `src/components/review/diff-overlay.tsx` (`'use client'`):
+- Переключатель «Показать изменения» над article панелью (toggle switch)
+- `GET /api/reviewer/assignments/[id]/diff` → `{ old, new, hasChanges }`
+- **Рендер**: inline diff (не side-by-side) — добавленный текст = `bg-success-bg`, удалённый = `bg-danger-bg line-through`
+- Реализация: diff на уровне слов/предложений через `computeDiff()`, рендер overlay поверх article
+- **Комбинирование** с annotation highlights: diff = фон (нижний слой), annotations = underline/border (верхний слой)
+- Неактивен если `hasChanges === false` (`opacity-50 pointer-events-none`)
+- **Бейдж**: «Изменено с момента вашего ревью: N блоков» (`bg-info-bg text-info rounded px-2 py-1 text-xs`)
+
+**Файлы:** `src/components/review/diff-overlay.tsx`, `src/app/reviewer/(protected)/assignments/[id]/page.tsx`
+
+**Валидация фазы 32:**
+- `npm run build` OK
+- Визуально: suggestion apply (happy path + 409), batch review flow (create → submit → visible), keyboard nav, diff overlay + annotations combo
+- Security: `stripDangerousHtml()` на suggestionText, batch visibility isolation
+
+---
+
+### Фаза 33: Inline Review — ревью + E2E (Done — 2026-04-17)
+
+**Контекст**: Code review, security review, обновление тест-кейсов, E2E прогон.
+
+**Scope:** Агентский ревью кода (critique + audit + design-watcher), тест-кейсы, E2E, обновление документации.
+
+---
+
+#### 33a — Ревью агентами
+
+**code-reviewer** — фокус:
+- `anchoring.ts`: XSS через `anchorData`, корректность fuzzy matching
+- `apply-suggestion/route.ts`: injection в MDX через `suggestionText`, race conditions при параллельном apply
+- `submit-review/route.ts`: race conditions при batch submit
+- `review-comments/route.ts`: batch visibility (auth bypass — author/reviewer2 не видят pending batch)
+- `highlight-layer.tsx`: cleanup CSS Highlights, memory leaks при re-render
+- `selection-popover.tsx`: корректность позиционирования, cleanup event listeners
+
+**security-reviewer** — фокус:
+- `PUT apply-suggestion`: может ли ревьюер инжектировать `<script>` через `suggestionText`? → `stripDangerousHtml()`
+- `anchorData`: `JSON.parse` без валидации структуры? → добавить zod/manual validation
+- `batchId`: может ли author увидеть pending batch ревьюера? → проверить фильтрацию в GET
+- Keyboard shortcuts: могут ли вызвать действия без авторизации?
+
+**design-watcher** — фокус:
+- Новые компоненты `src/components/review/` — CSS-переменные, нет hardcoded цветов
+- Popover/modal — `bg-elevated`, `border-border`, `shadow-md`
+- Анимации — `prefers-reduced-motion` respected
+- Responsive — mobile stack layout
+- Accessibility — `aria-label`, focus management
+
+---
+
+#### 33b — Обновление тест-кейсов
+
+Тест-кейсы уже созданы в diff:
+- `testing/test-cases/TC-REVIEWER.md` — 27 тест-кейсов (TC-RV-ANNO-001..027)
+- `testing/test-cases/TC-AUTHOR.md` — 11 тест-кейсов (TC-AU-ANNO-001..011)
+- `testing/test-cases/TC-ADMIN.md` — 5 тест-кейсов (TC-AD-ANNO-001..005)
+
+**Дополнительно создать/обновить:**
+- `testing/test-cases/TC-INLINE-REVIEW.md` — сводный cross-role файл (15 TC, формат как TC-GUEST.md):
+  - TC-IR-001: Выделение текста → popover → комментарий (P0)
+  - TC-IR-002: Выделение текста → suggestion → apply (P0)
+  - TC-IR-003: Suggestion apply на изменённый текст → 409 (P0)
+  - TC-IR-004..006: Block comment на code/KaTeX/Mermaid (P1)
+  - TC-IR-007: Batch review: создать 3 комментария → отправить → автор видит все (P0)
+  - TC-IR-008: Batch pending: автор НЕ видит pending (P0, security)
+  - TC-IR-009: Keyboard N/P/R/E/⌘↵ (P2)
+  - TC-IR-010: Orphan → «Текст изменён» (P1)
+  - TC-IR-011: Suggestion XSS: `<script>...` → stripped (P0, security)
+  - TC-IR-012: Diff overlay + annotations одновременно (P2)
+  - TC-IR-013..014: Author resolve/reply inline comment (P1)
+  - TC-IR-015: Admin apply suggestion на чужую статью (P1)
+
+- `testing/smoke/SMOKE-SUITE.md` — добавить:
+  - SMOKE-IR-001: выделение + комментарий
+  - SMOKE-IR-002: suggestion apply
+
+- `testing/regression/REGRESSION-SUITE.md` — секция «Inline Review» со ссылками на TC-IR-*
+
+---
+
+#### 33c — E2E прогон
+
+**Набор тестов:**
+1. Полный smoke из `SMOKE-SUITE.md` (регресс)
+2. SMOKE-IR-001: выделение текста → комментарий
+3. SMOKE-IR-002: suggestion apply
+4. TC-IR-007: batch review flow
+5. TC-IR-008: batch visibility isolation (security)
+6. TC-IR-011: suggestion XSS (security)
+
+**Для E2E inline review:**
+- Login as reviewer → navigate to assignment
+- Select text via `page.evaluate(() => { window.getSelection()... })`
+- Verify popover appears
+- Click comment button → fill thread → verify in sidebar
+- Verify highlight in article panel
+
+**Вердикт**: GO / NO-GO → `testing/reports/REPORT_INLINE_REVIEW.md`
+
+---
+
+#### 33d — Запись результатов и обновление документации
+
+1. `docs/PLAN.md` — фазы 30–33 → Done, записать результаты
+2. `CLAUDE.md` — добавить секцию «Inline Review» (anchoring, компоненты `src/components/review/`, API endpoints, batch review)
+3. Обновить сводную матрицу в `docs/JTBD.md` (уже обновлена в diff)
+4. Обновить критические граничные случаи (уже обновлены в diff)
+
+**Валидация фазы 33:**
+- `npm run build` OK
+- `npx playwright test` — existing + new tests pass
+- code-reviewer: 0 P0
+- security-reviewer: 0 CRITICAL
+- design-watcher: 0 P0
+- playwright-tester: GO
+
+---
+
+### Фаза 34: UX ревью + фикс диаграмм (Planned — 2026-04-17)
+
+**Контекст**: После Фазы 33 на seed-статьях с диаграммами падает JS-ошибка `Cannot read properties of undefined (reading 'replace')`, блокирующая ревью. Дополнительно: карточки тредов имеют 4 уровня вложенных border'ов и плохо сканируются; статьи «на ревью» теряются в общем списке автора; при нескольких ревьюерах автор вынужден переключаться между отдельными страницами `/review/{assignmentId}`; после apply-suggestion в треде нет визуального статуса «применено»; ревьюер не видит исходник диаграммы, комментировать «по строкам» нельзя.
+
+**Scope:** Null-safety guards в MDX-компонентах диаграмм + preview API, новый компонент `DiagramWithSource` + `reviewMode` в `compileMDX`, редизайн `review-thread.tsx` (левый цветной border вместо nested cards), секция «На ревью» на дашборде автора и в списке статей, unified review page для мульти-ревьюеров + новый endpoint, визуальный статус «Применена» + toast, расширение тест-кейсов и E2E, прогон code/security/design/seo агентов.
+
+---
+
+#### 34a — Фикс `.replace()` на undefined (P0)
+
+**Root causes:**
+- `src/app/api/preview/route.ts` — в `getAttr()` вызывается `val.value.trim()` без проверки типа `val.value` (может быть undefined для expression без stringified-значения)
+- `src/components/mdx/diagram.tsx` — `sanitizeSvg(svg)` падает при пустом body ответа kroki
+- `src/components/mdx/mermaid.tsx` — `m.default.render(id, chart)` при undefined `chart`
+- `src/components/mdx/circuit.tsx` — тот же kroki-поток что `diagram.tsx`
+
+**Правки:**
+- `getAttr()`: guard `typeof val?.value === "string"` до `.trim()`
+- `diagram.tsx` / `circuit.tsx`: default `chart = ""`, `type = ""`; `typeof svg === "string" && svg.length > 0` перед `sanitizeSvg`; иначе `<Fallback chart={chart}/>`
+- `mermaid.tsx`: early return `<Fallback chart={chart ?? ""}/>` если `!chart`
+- Reuse: существующий `Fallback` в `diagram.tsx:29-35`
+
+---
+
+#### 34b — Исходник диаграммы рядом с рендером (для ревьюера)
+
+**Новый компонент**: `src/components/mdx/diagram-with-source.tsx` (`"use client"`)
+- `<details>` + `<summary>` «Показать исходник»
+- `<pre><code>` (mono, `white-space: pre-wrap`), selectable — anchoring создаёт annotation на тексте исходника как на обычном коде
+
+**Интеграция через `reviewMode`:**
+- `src/lib/mdx.ts`: `compileMDX(source, { reviewMode?: boolean })` — при `reviewMode=true` компоненты `Mermaid`/`Diagram`/`Circuit` оборачиваются в `DiagramWithSource` (рендер оригинала + исходник)
+- Публичный блог (`/blog/[slug]`) использует `reviewMode=false` по умолчанию
+- Reviewer page и Author review assignment page вызывают `compileMDX(content, { reviewMode: true })`
+
+---
+
+#### 34c — Редизайн карточек тредов
+
+**Файл**: `src/components/review/review-thread.tsx`
+
+- Убрать внешнюю `border rounded-lg` → `border-l-4` (цвет по статусу: `warning`/`success`/`success/60`/`danger`/`muted`)
+- Header в одну строку: пин + автор + время + бейдж статуса, без flex-wrap
+- Quoted text: `pl-3 text-muted-foreground text-xs italic` с `::before '»'`, без рамки
+- Suggestion diff: сохраняем двухцветный блок, но без внутреннего `rounded`/`margin`; applied → `<details>` «Правка применена»
+- Replies: `pt-3 bg-muted/10`, убрать `ml-6 border-l-2`
+- Applied state: `bg-success-bg/30` + чекмарк на пине
+
+`src/components/review/review-sidebar.tsx`: `divide-y` между тредами, единый фон.
+
+Соответствие `.claude/rules/frontend-design.md`: нет cards-in-cards, только CSS-переменные.
+
+---
+
+#### 34d — Блок «На ревью» у автора
+
+**Dashboard** `src/app/author/(protected)/page.tsx`:
+- Карточка-счётчик «На ревью: N статей» → `/author/articles?filter=review`
+
+**Список статей** `src/app/author/(protected)/articles/page.tsx`:
+- `<section>` «На ревью» над таблицей. Карточки: заголовок + кол-во ревьюеров + badge непрочитанных замечаний. Клик → unified review page
+- Если `filter=review` в query — показать только секцию
+- Пустое состояние скрыто
+
+**Запрос**: join `articles` ↔ `reviewAssignments` (status `pending`/`accepted`), group by `articleId`. Отдельный count нерезолвленных `reviewComments` по каждой статье.
+
+---
+
+#### 34e — Unified review page (мульти-ревьюер)
+
+**Рефактор** `src/app/author/(protected)/articles/[id]/review/page.tsx` → единая страница:
+- Левая панель: MDX статьи с `reviewMode: true` + inline-аннотации всех ревьюеров; каждый пин — цвет по стабильному hash(reviewerId) → HSL (контраст ≥ 4.5:1)
+- Правая панель: chips-фильтр ревьюеров («Все» + по одному), список тредов фильтруется. В header треда — бейдж с именем ревьюера
+- Кнопка «Открыть сессию N» → старая `[assignmentId]/page.tsx` (для verdict + checklist)
+- Автор может применить suggestion любого ревьюера из unified view
+
+**Новый endpoint** `src/app/api/author/articles/[id]/review-comments/route.ts`:
+- `GET` возвращает все `reviewComments` по всем `reviewAssignments` статьи + список `reviewers [{id, name, colorSeed}]`
+- Auth: `requireAuthor()` + `article.authorId === session.userId`
+- Исключает pending batch комментарии ревьюеров (они видны только автору пендинга + админу)
+
+**Backward compat**: старый `[assignmentId]/page.tsx` остаётся для deep-link из уведомлений.
+
+**Файлы:**
+- `src/app/author/(protected)/articles/[id]/review/page.tsx` (рефактор)
+- `src/app/author/(protected)/articles/[id]/review/unified-review-view.tsx` (новый)
+- `src/app/api/author/articles/[id]/review-comments/route.ts` (новый)
+- `src/components/review/review-context.tsx` — добавить `reviewerId`, `reviewerColorSeed` в `ReviewComment`
+- `src/components/review/review-thread.tsx` — бейдж ревьюера
+
+---
+
+#### 34f — Статус «Применена» + toast
+
+**Файл** `src/components/review/review-thread.tsx`:
+- После успешного `PUT /api/review-comments/[id]/apply-suggestion` — оптимистичное обновление `appliedAt`, бейдж «Применена», collapse исходника
+- Toast «Правка применена» (reuse из `batch-review-bar.tsx`)
+- Кнопка «Применить» → disabled «Применена ✓», `bg-success/10 text-success`
+- 409 race → inline-нотис «Правка уже применена»
+
+`src/app/api/review-comments/[id]/apply-suggestion/route.ts` — подтвердить `appliedAt` в ответе.
+
+---
+
+#### 34g — Тест-кейсы (qa-test-planner)
+
+**TC-REVIEWER.md — Diagrams in Review:**
+- `TC-RV-DIAG-001` (P0): открытие ревью статьи с Mermaid — 0 JS-ошибок, рендер + исходник видны
+- `TC-RV-DIAG-002` (P0): Kroki недоступен → Fallback, страница не падает
+- `TC-RV-DIAG-003` (P1): выделение в исходнике → annotation
+- `TC-RV-DIAG-004` (P1): Circuit/TikZ — рендер + toggle
+- `TC-RV-DIAG-005` (P2): `prefers-reduced-motion` соблюдён
+
+**TC-AUTHOR.md — UX Review Hub:**
+- `TC-AU-UX-001` (P0): секция «На ревью» на `/author/articles`
+- `TC-AU-UX-002` (P0): клик по карточке → unified review page
+- `TC-AU-UX-003` (P0): unified page показывает комментарии всех ревьюеров с цветовой кодировкой
+- `TC-AU-UX-004` (P1): chips-фильтр по ревьюеру
+- `TC-AU-UX-005` (P0): apply suggestion → бейдж «Применена», toast, collapse
+- `TC-AU-UX-006` (P1): «Открыть сессию N» → `[assignmentId]/page.tsx`
+- `TC-AU-UX-007` (P2): дизайн-snapshot треда без nested-borders
+
+**TC-REVIEWER.md — Multi-reviewer:**
+- `TC-MULTI-001` (P0): 2 ревьюера комментируют → автор видит обоих
+- `TC-MULTI-002` (P0, security): ревьюер B не видит pending batch ревьюера A
+- `TC-MULTI-003` (P1): apply suggestion A → B видит обновлённый MDX
+- `TC-MULTI-004` (P1): счётчик новых замечаний корректен
+
+**Smoke**:
+- `SMOKE-RV-DIAG-001` — открытие ревью статьи с диаграммой (регресс)
+- `SMOKE-AU-UX-001` — клик по «На ревью» → unified page
+
+**Regression**: новый блок 14 «UX ревью и мульти-ревьюер».
+
+---
+
+#### 34h — E2E прогон (playwright-tester)
+
+1. `reset-test-db.sh` → seed с 2 ревьюерами + статья с Mermaid + Diagram + Circuit
+2. Полный SMOKE-SUITE (регресс)
+3. TC-RV-DIAG-001..005, TC-AU-UX-001..007, TC-MULTI-001..004
+4. Для TC-RV-DIAG-001: `page.on('pageerror')` ловит JS-ошибки
+5. Для TC-MULTI-002: curl с reviewer-cookies — проверка 403
+6. Отчёт: `testing/reports/REPORT_PHASE_34.md`
+
+---
+
+#### 34i — Валидация агентами
+
+- **design-watcher** — карточки тредов (border-left, контраст, dark/light), `DiagramWithSource` (spacing, focus-ring), цветовая кодировка ревьюеров (hsl-hash контраст ≥ 4.5:1), секция «На ревью»
+- **code-reviewer** — null-safety guards, `reviewMode` branch в `compileMDX`, новый endpoint (N+1, auth), race в apply-suggestion из unified view
+- **security-reviewer** — unified endpoint не утекает pending batch; `DiagramWithSource` без `dangerouslySetInnerHTML`; apply-suggestion с проверкой `article.authorId === session.userId`
+- **seo-optimizer** — `reviewMode` не активен на `/blog/[slug]`, robots.txt закрывает `/author`/`/reviewer`
+
+---
+
+**Валидация фазы 34:**
+- `npm run build` OK, `npm run lint` OK
+- Баг `.replace()` не воспроизводится ни на одной seed-статье с диаграммами
+- Исходник диаграммы виден ревьюеру, anchoring работает
+- Unified page: автор с 2+ ревьюерами видит всё в одной точке
+- Apply suggestion: бейдж «Применена», toast, collapse
+- `npx playwright test` — все тесты pass
+- code-reviewer 0 P0, security-reviewer 0 CRITICAL, design-watcher 0 P0, seo-optimizer no-op
+- Вердикт: GO
+
+**NO-GO (блокеры):**
+- JS-ошибка на ревью-странице с диаграммой
+- Leak pending batch между ревьюерами
+- Регрессия на `/blog/[slug]` из-за `reviewMode`
